@@ -39,12 +39,12 @@ class AppTheme {
       type: BottomNavigationBarType.fixed,
       elevation: 8,
     ),
-    cardTheme: CardTheme(
+    cardTheme: CardThemeData(
       color: card,
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-            side: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
+        side: BorderSide(color: Colors.black.withValues(alpha: 0.08)),
       ),
     ),
   );
