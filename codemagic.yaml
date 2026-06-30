@@ -24,6 +24,12 @@ workflows:
         script: flutter analyze
       - name: Run tests
         script: flutter test
+      - name: Clean iOS CocoaPods artifacts
+        script: |
+          rm -rf ios/Pods ios/Podfile.lock
+          if [ -d ios/Runner.xcworkspace ]; then
+            (cd ios && pod deintegrate) || true
+          fi
       - name: Build iOS simulator app
         script: flutter build ios --simulator --debug --no-codesign
       - name: Package simulator app
