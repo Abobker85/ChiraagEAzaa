@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../theme.dart';
 import '../services/settings_service.dart';
@@ -22,11 +23,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Future<void> _loadPushStatus() async {
+    if (kIsWeb) return;
+
     final status = await PushNotificationService.instance.getStatus();
     if (mounted) setState(() => _pushStatus = status);
   }
 
   Future<void> _togglePush() async {
+    if (kIsWeb) return;
+
     if (_pushStatus == AuthorizationStatus.authorized) {
       await PushNotificationService.instance.unsubscribeFromTopic('general');
       _showToast('Notifications disabled');
@@ -167,6 +172,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _pushRow() {
+    if (kIsWeb) {
+      return const ListTile(
+        title: Text('Push Notifications'),
+        subtitle: Text(
+          'Available in Android and iOS builds',
+          style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+        ),
+        trailing: Icon(Icons.notifications_off_outlined, color: AppTheme.textTertiary),
+      );
+    }
+
     final enabled = _pushStatus == AuthorizationStatus.authorized;
     final denied = _pushStatus == AuthorizationStatus.denied;
     final icon = enabled ? '🔔' : denied ? '🚫' : '🔕';

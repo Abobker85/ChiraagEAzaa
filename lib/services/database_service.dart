@@ -1,8 +1,9 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:sqflite_common_ffi_web/sqflite_ffi_web.dart';
 import '../models/lyric_item.dart';
 
 /// Manages the bundled SQLite database.
@@ -25,6 +26,11 @@ class DatabaseService {
   }
 
   Future<Database> _open() async {
+    if (kIsWeb) {
+      databaseFactory = databaseFactoryFfiWeb;
+      return _openWeb();
+    }
+
     final dbDir = await getDatabasesPath();
     final dbPath = join(dbDir, _dbName);
 
@@ -38,6 +44,24 @@ class DatabaseService {
       final bytes = data.buffer.asUint8List();
       await File(dbPath).writeAsBytes(bytes, flush: true);
       debugPrint('DatabaseService: DB copied (${bytes.length} bytes)');
+    }
+
+    return openDatabase(dbPath, readOnly: false, version: _dbVersion);
+  }
+
+  Future<Database> _openWeb() async {
+    const dbPath = _dbName;
+    final shouldCopy = !await databaseExists(dbPath) || await _needsUpdate(dbPath);
+
+    if (shouldCopy) {
+      debugPrint('DatabaseService: importing web DB from assets...');
+      final data = await rootBundle.load('assets/$_dbName');
+      final bytes = data.buffer.asUint8List(
+        data.offsetInBytes,
+        data.lengthInBytes,
+      );
+      await databaseFactory.writeDatabaseBytes(dbPath, bytes);
+      debugPrint('DatabaseService: web DB imported (${bytes.length} bytes)');
     }
 
     return openDatabase(dbPath, readOnly: false, version: _dbVersion);

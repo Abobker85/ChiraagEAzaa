@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -27,15 +28,18 @@ void main() async {
   // Load settings from DB
   await AppSettings.instance.load();
 
-  // Firebase + Push
-  await Firebase.initializeApp();
-  await PushNotificationService.instance.init();
+  if (!kIsWeb) {
+    // Firebase + Push
+    await Firebase.initializeApp();
+    await PushNotificationService.instance.init();
+  }
 
   runApp(const ChiraagApp());
 }
 
 class ChiraagApp extends StatelessWidget {
   const ChiraagApp({super.key});
+
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Chiraag e Azaa',
