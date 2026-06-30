@@ -14,7 +14,7 @@ class PushNotificationService {
   PushNotificationService._();
   static final instance = PushNotificationService._();
 
-  final _fm = FirebaseMessaging.instance;
+  FirebaseMessaging get _fm => FirebaseMessaging.instance;
   final _localNotifs = FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
@@ -79,32 +79,59 @@ class PushNotificationService {
 
   /// Request permission from the user. Returns true if granted.
   Future<bool> requestPermission() async {
-    if (Platform.isIOS) {
-      final settings = await _fm.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      return settings.authorizationStatus == AuthorizationStatus.authorized ||
-          settings.authorizationStatus == AuthorizationStatus.provisional;
+    try {
+      if (Platform.isIOS) {
+        final settings = await _fm.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        return settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional;
+      }
+      // Android 13+ permission is requested automatically on first subscribe
+      return true;
+    } catch (error, stackTrace) {
+      debugPrint('Push permission unavailable: $error\n$stackTrace');
+      return false;
     }
-    // Android 13+ permission is requested automatically on first subscribe
-    return true;
   }
 
   /// Get the current FCM token (send this to your backend)
-  Future<String?> getToken() => _fm.getToken();
+  Future<String?> getToken() async {
+    try {
+      return await _fm.getToken();
+    } catch (error, stackTrace) {
+      debugPrint('Push token unavailable: $error\n$stackTrace');
+      return null;
+    }
+  }
 
   /// Subscribe to a topic (e.g. "general")
-  Future<void> subscribeToTopic(String topic) =>
-      _fm.subscribeToTopic(topic);
+  Future<void> subscribeToTopic(String topic) async {
+    try {
+      await _fm.subscribeToTopic(topic);
+    } catch (error, stackTrace) {
+      debugPrint('Push topic subscribe unavailable: $error\n$stackTrace');
+    }
+  }
 
-  Future<void> unsubscribeFromTopic(String topic) =>
-      _fm.unsubscribeFromTopic(topic);
+  Future<void> unsubscribeFromTopic(String topic) async {
+    try {
+      await _fm.unsubscribeFromTopic(topic);
+    } catch (error, stackTrace) {
+      debugPrint('Push topic unsubscribe unavailable: $error\n$stackTrace');
+    }
+  }
 
   /// Check current notification permission status
   Future<AuthorizationStatus> getStatus() async {
-    final settings = await _fm.getNotificationSettings();
-    return settings.authorizationStatus;
+    try {
+      final settings = await _fm.getNotificationSettings();
+      return settings.authorizationStatus;
+    } catch (error, stackTrace) {
+      debugPrint('Push status unavailable: $error\n$stackTrace');
+      return AuthorizationStatus.notDetermined;
+    }
   }
 }

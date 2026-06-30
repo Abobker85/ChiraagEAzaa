@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:firebase_core/firebase_core.dart';
 
@@ -19,34 +19,86 @@ void main() async {
   await SystemChrome.setPreferredOrientations(
       [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
 
-  // Copy DB from assets to device on first launch
-  await DatabaseService.instance.db;
+  try {
+    // Copy DB from assets to device on first launch
+    await DatabaseService.instance.db;
 
-  // Load bookmarks into in-memory cache
-  await DatabaseService.instance.loadBookmarkIds();
+    // Load bookmarks into in-memory cache
+    await DatabaseService.instance.loadBookmarkIds();
 
-  // Load settings from DB
-  await AppSettings.instance.load();
+    // Load settings from DB
+    await AppSettings.instance.load();
+  } catch (error, stackTrace) {
+    debugPrint('Startup failed: $error\n$stackTrace');
+    runApp(ChiraagApp(home: StartupErrorScreen(message: error.toString())));
+    return;
+  }
 
   if (!kIsWeb) {
-    // Firebase + Push
-    await Firebase.initializeApp();
-    await PushNotificationService.instance.init();
+    try {
+      // Firebase + Push. Keep this optional so missing Firebase config does not
+      // leave simulator builds stuck on the launch screen.
+      await Firebase.initializeApp();
+      await PushNotificationService.instance.init();
+    } catch (error, stackTrace) {
+      debugPrint('Push initialization skipped: $error\n$stackTrace');
+    }
   }
 
   runApp(const ChiraagApp());
 }
 
 class ChiraagApp extends StatelessWidget {
-  const ChiraagApp({super.key});
+  final Widget home;
+
+  const ChiraagApp({super.key, this.home = const MainShell()});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Chiraag e Azaa',
     debugShowCheckedModeBanner: false,
     theme: AppTheme.light,
-    home: const MainShell(),
+    home: home,
   );
+}
+
+class StartupErrorScreen extends StatelessWidget {
+  final String message;
+
+  const StartupErrorScreen({super.key, required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Chiraag e Azaa')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.error_outline, color: AppTheme.errorRed, size: 48),
+              const SizedBox(height: 16),
+              const Text(
+                'App startup failed',
+                style: TextStyle(
+                  color: AppTheme.textPrimary,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppTheme.textSecondary),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class MainShell extends StatefulWidget {
