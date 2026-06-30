@@ -25,7 +25,7 @@ workflows:
       - name: Run tests
         script: flutter test
       - name: Build iOS simulator app
-        script: flutter build ios --simulator --debug
+        script: flutter build ios --simulator --debug --no-codesign
       - name: Package simulator app
         script: |
           cd build/ios/iphonesimulator
