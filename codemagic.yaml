@@ -1,14 +1,19 @@
 workflows:
-  ios-simulator:
-    name: iOS Simulator Build
-    max_build_duration: 60
+  ios-testflight:
+    name: iOS TestFlight Release
+    max_build_duration: 90
     instance_type: mac_mini_m2
-
+    integrations:
+      app_store_connect: ChiraagEAzaa
     environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.mirali.chiraageazaa
       flutter: stable
       xcode: latest
       cocoapods: default
-
+      vars:
+        APP_STORE_APPLE_ID: 6786198976
     triggering:
       events:
         - push
@@ -16,27 +21,21 @@ workflows:
         - pattern: main
           include: true
           source: true
-
     scripts:
       - name: Get Flutter packages
         script: flutter pub get
-      - name: Analyze Dart code
-        script: flutter analyze
-      - name: Run tests
-        script: flutter test
-      - name: Clean iOS CocoaPods artifacts
+      - name: Install pods
+        script: find . -name "Podfile" -execdir pod install \;
+      - name: Set up code signing settings on Xcode project
+        script: xcode-project use-profiles
+      - name: Flutter build ipa
         script: |
-          rm -rf ios/Pods ios/Podfile.lock
-          if [ -d ios/Runner.xcworkspace ]; then
-            (cd ios && pod deintegrate) || true
-          fi
-      - name: Build iOS simulator app
-        script: flutter build ios --simulator --debug --no-codesign
-      - name: Package simulator app
-        script: |
-          cd build/ios/iphonesimulator
-          zip -r Runner.app.zip Runner.app
-
+          flutter build ipa --release \
+            --export-options-plist=/Users/builder/export_options.plist
     artifacts:
-      - build/ios/iphonesimulator/Runner.app
-      - build/ios/iphonesimulator/Runner.app.zip
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
