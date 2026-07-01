@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../theme.dart';
 import '../models/lyric_item.dart';
+import '../services/content_service.dart';
 import '../services/database_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/audio_player_widget.dart';
@@ -25,7 +26,9 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
   void initState() {
     super.initState();
     _saved = SavedManager.instance.isSaved(widget.item.id);
-    _isRtl = widget.item.isRtl;
+    // Force RTL for Arabic categories (duas, ziyaraat) even if is_rtl=0 in DB
+    final catKey = widget.item.categoryKey.split('/').first;
+    _isRtl = widget.item.isRtl || catKey == 'duas' || catKey == 'ziyaraat';
     _load();
   }
 
@@ -45,11 +48,26 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
         .replaceAll('&nbsp;', ' ')
         .trim();
 
+    // Strip any inline style attributes so settings font sizes are not overridden
+    h = h.replaceAll(RegExp(r'\s*style="[^"]*"', caseSensitive: false), '');
+    // Strip <span> wrappers but keep their content
+    h = h.replaceAll(RegExp(r'<\/?span[^>]*>', caseSensitive: false), '');
+
     if (rtl) {
+      // Strip existing <p> tags so we can re-wrap properly
+      h = h.replaceAll(RegExp(r'<\/?p[^>]*>', caseSensitive: false), '');
       h = h.replaceAll(RegExp(r'(<br\s*\/?>\s*){2,}', caseSensitive: false), '\n\n');
       h = h.replaceAll(RegExp(r'<br\s*\/?>',           caseSensitive: false), '\n');
       final lines = h.split(RegExp(r'\n+')).map((l) => l.trim()).where((l) => l.isNotEmpty);
-      h = lines.map((l) => '<p dir="rtl">$l</p>').join('');
+      // Use category to determine if content is Arabic (duas, ziyaraat) vs Urdu
+      final isArabicCategory = _isArabicCategory(widget.item.categoryKey);
+      h = lines.map((l) {
+        if (isArabicCategory) {
+          return '<blockquote dir="rtl">$l</blockquote>';
+        } else {
+          return '<p dir="rtl">$l</p>';
+        }
+      }).join('');
     } else {
       final blocks = h.replaceAll(RegExp(r'<br\s*\/?>\s*\n?', caseSensitive: false), '\n')
           .split(RegExp(r'\n{2,}'));
@@ -59,6 +77,12 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
       }).where((b) => b.isNotEmpty).join('');
     }
     return h;
+  }
+
+  /// Categories that contain Arabic content (Quran, Duas, Ziyaraat).
+  static bool _isArabicCategory(String categoryKey) {
+    final key = categoryKey.split('/').first;
+    return key == 'duas' || key == 'ziyaraat';
   }
 
   Future<void> _toggleSave() async {
@@ -135,10 +159,11 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         AudioPlayerWidget(lyricId: widget.item.id),
-                        Padding(
-                          padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + s.paraSpacing),
-                          child: Directionality(
-                            textDirection: _isRtl ? TextDirection.rtl : TextDirection.ltr,
+                        if (_isRtl)
+                          ..._buildRtlParagraphs(s)
+                        else
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + s.paraSpacing),
                             child: Html(
                               data: _html!,
                               style: {
@@ -146,18 +171,103 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
                                   fontSize: FontSize(fontSize),
                                   lineHeight: LineHeight(s.lineHeight),
                                   margin: Margins.only(bottom: s.paraSpacing),
-                                  fontFamily: _isRtl ? 'NotoNaskhArabic' : null,
-                                  textAlign: _isRtl ? TextAlign.right : TextAlign.left,
+                                  textAlign: TextAlign.left,
                                 ),
                                 'body': Style(padding: HtmlPaddings.zero, margin: Margins.zero),
                               },
                             ),
                           ),
-                        ),
                       ],
                     ),
                   ),
                 ),
     );
+  }
+
+  /// Build RTL paragraphs directly as Flutter widgets for reliable font control.
+  List<Widget> _buildRtlParagraphs(AppSettings s) {
+    if (_html == null) return [];
+    // Extract text from each paragraph tag (blockquote = Arabic, p = Urdu)
+    final blockquoteRegex = RegExp(r'<blockquote[^>]*>(.*?)</blockquote>', dotAll: true);
+    final pRegex = RegExp(r'<p[^>]*>(.*?)</p>', dotAll: true);
+    // Find all tags in order
+    final allTags = RegExp(r'<(blockquote|p)[^>]*>(.*?)</\1>', dotAll: true);
+    final matches = allTags.allMatches(_html!);
+
+    final widgets = <Widget>[];
+    for (final m in matches) {
+      final tag = m.group(1)!;
+      final content = m.group(2)!;
+      final plainText = content
+          .replaceAll(RegExp(r'<[^>]+>'), '')
+          .replaceAll('&amp;', '&')
+          .replaceAll('&lt;', '<')
+          .replaceAll('&gt;', '>')
+          .replaceAll('&#39;', "'")
+          .replaceAll('&quot;', '"')
+          .replaceAllMapped(RegExp(r'&#x([0-9a-fA-F]+);'), (m) =>
+              String.fromCharCode(int.parse(m.group(1)!, radix: 16)))
+          .replaceAllMapped(RegExp(r'&#(\d+);'), (m) =>
+              String.fromCharCode(int.parse(m.group(1)!)))
+          .trim();
+      if (plainText.isEmpty) continue;
+
+      final isArabic = tag == 'blockquote';
+      final textStyle = TextStyle(
+        fontSize: isArabic ? s.arabicFontSize : s.rtlFontSize,
+        height: isArabic ? s.lineHeight + 0.3 : s.lineHeight,
+        fontFamily: 'NotoNaskhArabic',
+        color: AppTheme.textPrimary,
+      );
+
+      widgets.add(
+        Padding(
+          padding: EdgeInsets.fromLTRB(
+            16, widgets.isEmpty ? 8 : 0, 16,
+            isArabic ? s.paraSpacing + 20 : s.paraSpacing + 14,
+          ),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Text(
+              plainText,
+              textAlign: TextAlign.right,
+              style: textStyle,
+            ),
+          ),
+        ),
+      );
+    }
+    if (widgets.isEmpty) {
+      // Fallback: show raw text
+      final plainText = _html!
+          .replaceAll(RegExp(r'<[^>]+>'), '')
+          .replaceAll('&amp;', '&')
+          .replaceAll('&lt;', '<')
+          .replaceAll('&gt;', '>')
+          .replaceAllMapped(RegExp(r'&#x([0-9a-fA-F]+);'), (m) =>
+              String.fromCharCode(int.parse(m.group(1)!, radix: 16)))
+          .replaceAllMapped(RegExp(r'&#(\d+);'), (m) =>
+              String.fromCharCode(int.parse(m.group(1)!)))
+          .trim();
+      widgets.add(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          child: Directionality(
+            textDirection: TextDirection.rtl,
+            child: Text(
+              plainText,
+              textAlign: TextAlign.right,
+              style: TextStyle(
+                fontSize: s.arabicFontSize,
+                height: s.lineHeight + 0.3,
+                fontFamily: 'NotoNaskhArabic',
+                color: AppTheme.textPrimary,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return widgets;
   }
 }
