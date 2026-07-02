@@ -23,19 +23,23 @@ workflows:
           source: true
     scripts:
       - name: Get Flutter packages
-        script: flutter pub get
+        script: flutter packages pub get
       - name: Install pods
-        script: find . -name "Podfile" -execdir pod install \;
+        script: |
+          cd ios && pod install
       - name: Set up code signing settings on Xcode project
         script: xcode-project use-profiles
       - name: Flutter build ipa
         script: |
           flutter build ipa --release \
+            --no-tree-shake-icons \
             --export-options-plist=/Users/builder/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
     publishing:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
+        submit_to_app_store: false
