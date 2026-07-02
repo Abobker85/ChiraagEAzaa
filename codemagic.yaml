@@ -29,6 +29,10 @@ workflows:
           cd ios && pod install
       - name: Set up code signing settings on Xcode project
         script: xcode-project use-profiles
+      - name: Increment build number
+        script: |
+          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          agvtool new-version -all $((LATEST_BUILD + 1))
       - name: Flutter build ipa
         script: |
           flutter build ipa --release \
@@ -40,4 +44,5 @@ workflows:
       app_store_connect:
         auth: integration
         submit_to_testflight: true
+        submit_to_app_store: false
         submit_to_app_store: false
