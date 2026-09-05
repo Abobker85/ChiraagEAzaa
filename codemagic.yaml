@@ -22,8 +22,11 @@ workflows:
           include: true
           source: true
     scripts:
-      - name: Get Flutter packages
-        script: flutter packages pub get
+      - name: Prepare Flutter iOS configuration
+        script: |
+          flutter pub get
+          flutter build ios --config-only --release --no-codesign
+          test -f ios/Flutter/Generated.xcconfig
       - name: Install pods
         script: |
           cd ios && pod install
