@@ -32,13 +32,15 @@ workflows:
           cd ios && pod install
       - name: Set up code signing settings on Xcode project
         script: xcode-project use-profiles
-      - name: Increment build number
-        script: |
-          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
-          agvtool new-version -all $((LATEST_BUILD + 1))
       - name: Flutter build ipa
         script: |
+          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || true)
+          if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]]; then
+            LATEST_BUILD=0
+          fi
+          BUILD_NUMBER=$((LATEST_BUILD + 1))
           flutter build ipa --release \
+            --build-number="$BUILD_NUMBER" \
             --export-options-plist=/Users/builder/export_options.plist
     artifacts:
       - build/ios/ipa/*.ipa
