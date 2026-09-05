@@ -29,6 +29,8 @@
         <key>NSAllowsArbitraryLoads</key>
         <true/>
     </dict>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Chiraag e Azaa may use microphone access to support audio features.</string>
     <!-- Push notification permissions -->
     <key>UIBackgroundModes</key>
     <array>
