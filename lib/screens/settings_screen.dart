@@ -155,7 +155,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ]),
             _sectionHeader('About'),
             _settingsCard([
-              _infoRow('Chiraag e Azaa', 'Version 1.0', trailing: const Text('v1.0', style: TextStyle(color: AppTheme.textSecondary))),
+              _infoRow(
+                'Chiraag e Azaa',
+                'Version 1.0',
+                leading: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    'assets/icon/app_icon.png',
+                    width: 38,
+                    height: 38,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                trailing: const Text('v1.0', style: TextStyle(color: AppTheme.textSecondary)),
+              ),
               const Divider(height: 1, thickness: 0.5, color: AppTheme.separator),
               _infoRow('Total Lyrics', 'Nouhay, Marsias, Duas & more', trailing: const Text('5,128', style: TextStyle(color: AppTheme.textSecondary))),
               const Divider(height: 1, thickness: 0.5, color: AppTheme.separator),
@@ -282,7 +295,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _infoRow(String label, String sub, {Widget? trailing}) => ListTile(
+  Widget _infoRow(String label, String sub, {Widget? trailing, Widget? leading}) => ListTile(
+    leading: leading,
     title: Text(label, style: const TextStyle(fontSize: 15)),
     subtitle: Text(sub, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
     trailing: trailing,

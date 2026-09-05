@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_html/flutter_html.dart';
 import '../theme.dart';
 import '../models/lyric_item.dart';
-import '../services/content_service.dart';
 import '../services/database_service.dart';
 import '../services/settings_service.dart';
 import '../widgets/audio_player_widget.dart';
@@ -187,9 +186,6 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
   /// Build RTL paragraphs directly as Flutter widgets for reliable font control.
   List<Widget> _buildRtlParagraphs(AppSettings s) {
     if (_html == null) return [];
-    // Extract text from each paragraph tag (blockquote = Arabic, p = Urdu)
-    final blockquoteRegex = RegExp(r'<blockquote[^>]*>(.*?)</blockquote>', dotAll: true);
-    final pRegex = RegExp(r'<p[^>]*>(.*?)</p>', dotAll: true);
     // Find all tags in order
     final allTags = RegExp(r'<(blockquote|p)[^>]*>(.*?)</\1>', dotAll: true);
     final matches = allTags.allMatches(_html!);
