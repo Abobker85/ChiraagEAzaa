@@ -118,18 +118,19 @@ class _MainShellState extends State<MainShell> {
     (Icons.settings_outlined, Icons.settings, 'Settings'),
   ];
 
-  static const _screens = [
-    HomeScreen(),
-    SearchScreen(),
-    TasbihScreen(),
-    SavedScreen(),
-    SettingsScreen(),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(index: _tab, children: _screens),
+      body: IndexedStack(
+        index: _tab,
+        children: [
+          HomeScreen(onSelectTab: (i) => setState(() => _tab = i)),
+          const SearchScreen(),
+          const TasbihScreen(),
+          const SavedScreen(),
+          const SettingsScreen(),
+        ],
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
                 border: Border(top: BorderSide(color: Colors.black.withValues(alpha: 0.1)))),

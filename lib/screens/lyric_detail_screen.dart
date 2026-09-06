@@ -125,9 +125,6 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final s = AppSettings.instance;
-    final fontSize = _isRtl ? s.rtlFontSize : s.ltrFontSize;
-
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.item.title, maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -153,32 +150,37 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
               ? const Center(child: Text('Content not available'))
               : AnimatedBuilder(
                   animation: AppSettings.instance,
-                  builder: (context, _) => SingleChildScrollView(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        AudioPlayerWidget(lyricId: widget.item.id),
-                        if (_isRtl)
-                          ..._buildRtlParagraphs(s)
-                        else
-                          Padding(
-                            padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + s.paraSpacing),
-                            child: Html(
-                              data: _html!,
-                              style: {
-                                'p': Style(
-                                  fontSize: FontSize(fontSize),
-                                  lineHeight: LineHeight(s.lineHeight),
-                                  margin: Margins.only(bottom: s.paraSpacing),
-                                  textAlign: TextAlign.left,
-                                ),
-                                'body': Style(padding: HtmlPaddings.zero, margin: Margins.zero),
-                              },
+                  builder: (context, _) {
+                    // Read settings INSIDE builder so every notifyListeners() triggers a fresh read
+                    final s = AppSettings.instance;
+                    final fontSize = _isRtl ? s.rtlFontSize : s.ltrFontSize;
+                    return SingleChildScrollView(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          AudioPlayerWidget(lyricId: widget.item.id),
+                          if (_isRtl)
+                            ..._buildRtlParagraphs(s)
+                          else
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + s.paraSpacing),
+                              child: Html(
+                                data: _html!,
+                                style: {
+                                  'p': Style(
+                                    fontSize: FontSize(fontSize),
+                                    lineHeight: LineHeight(s.lineHeight),
+                                    margin: Margins.only(bottom: s.paraSpacing),
+                                    textAlign: TextAlign.left,
+                                  ),
+                                  'body': Style(padding: HtmlPaddings.zero, margin: Margins.zero),
+                                },
+                              ),
                             ),
-                          ),
-                      ],
-                    ),
-                  ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
     );
   }

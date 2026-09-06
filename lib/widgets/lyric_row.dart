@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../theme.dart';
+import '../services/settings_service.dart';
 
 class LyricRow extends StatelessWidget {
   final String title;
@@ -19,43 +20,62 @@ class LyricRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: isRtl
-                    ? CrossAxisAlignment.end
-                    : CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: AppTheme.textPrimary,
-                      fontFamily: isRtl ? 'NotoNaskhArabic' : null,
-                    ),
-                    textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+    return AnimatedBuilder(
+      animation: AppSettings.instance,
+      builder: (context, _) {
+        final s = AppSettings.instance;
+        // Use a scaled-down version of the content font for list titles
+        // so they grow/shrink proportionally when the user adjusts font size.
+        // LTR content: base 15 → scales with ltrFontSize (default 19).
+        // RTL content: base 15 → scales with rtlFontSize (default 46), but
+        //   list titles are short so we cap at a sensible size.
+        final double titleSize = isRtl
+            ? (s.rtlFontSize * 15 / 46).clamp(13.0, 22.0)
+            : (s.ltrFontSize * 15 / 19).clamp(12.0, 20.0);
+        final double subtitleSize = (titleSize * 0.8).clamp(10.0, 16.0);
+
+        return InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: isRtl
+                        ? CrossAxisAlignment.end
+                        : CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: titleSize,
+                          fontWeight: FontWeight.w500,
+                          color: AppTheme.textPrimary,
+                          fontFamily: isRtl ? 'NotoNaskhArabic' : null,
+                        ),
+                        textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (subtitle != null && subtitle!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(subtitle!,
+                            style: TextStyle(
+                              fontSize: subtitleSize,
+                              color: AppTheme.textSecondary,
+                            )),
+                      ],
+                    ],
                   ),
-                  if (subtitle != null && subtitle!.isNotEmpty) ...[
-                    const SizedBox(height: 2),
-                    Text(subtitle!,
-                        style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-                  ],
-                ],
-              ),
+                ),
+                trailing ??
+                    const Icon(Icons.chevron_right, color: AppTheme.textTertiary, size: 20),
+              ],
             ),
-            trailing ??
-                const Icon(Icons.chevron_right, color: AppTheme.textTertiary, size: 20),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

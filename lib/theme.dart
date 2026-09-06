@@ -12,6 +12,9 @@ class AppTheme {
   static const Color textTertiary = Color(0xFFAAAAAA);
   static const Color separator = Color(0x0F000000);
   static const Color errorRed = Color(0xFFC0392B);
+  static const Color gold = Color(0xFFD4AF37);
+  static const Color goldLight = Color(0xFFFDF6E2);
+  static const Color goldBorder = Color(0x33D4AF37);
 
   static ThemeData get light => ThemeData(
     useMaterial3: true,
