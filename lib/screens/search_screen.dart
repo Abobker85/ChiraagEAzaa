@@ -84,7 +84,11 @@ class _SearchScreenState extends State<SearchScreen> {
                           subtitle: item.subtitle.isNotEmpty ? item.subtitle : null,
                           isRtl: item.isRtl,
                           onTap: () => Navigator.push(ctx, MaterialPageRoute(
-                            builder: (_) => LyricDetailScreen(item: item),
+                            builder: (_) => LyricDetailScreen(
+                              item: item,
+                              playlist: _results,
+                              initialIndex: i,
+                            ),
                           )),
                         );
                       },

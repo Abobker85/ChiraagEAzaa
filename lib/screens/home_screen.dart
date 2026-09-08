@@ -3,6 +3,7 @@ import '../theme.dart';
 import '../models/lyric_item.dart';
 import '../services/database_service.dart';
 import 'category_screen.dart';
+import 'dua_hub_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onSelectTab;
@@ -572,6 +573,15 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _openCategory(Category cat) {
+    if (cat.key == 'duas' || cat.key == 'ziyaraat' || cat.key == 'munaejaat') {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DuaHubScreen(initialCategoryKey: cat.key),
+        ),
+      );
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => CategoryScreen(category: cat)),

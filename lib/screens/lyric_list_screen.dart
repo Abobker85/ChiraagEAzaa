@@ -68,7 +68,11 @@ class _LyricListScreenState extends State<LyricListScreen> {
                       subtitle: item.subtitle.isNotEmpty ? item.subtitle : null,
                       isRtl: item.isRtl,
                       onTap: () => Navigator.push(context, MaterialPageRoute(
-                        builder: (_) => LyricDetailScreen(item: item),
+                        builder: (_) => LyricDetailScreen(
+                          item: item,
+                          playlist: _items,
+                          initialIndex: i,
+                        ),
                       )),
                     );
                   },

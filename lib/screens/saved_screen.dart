@@ -56,7 +56,11 @@ class _SavedScreenState extends State<SavedScreen> {
                       isRtl: item.isRtl,
                       onTap: () async {
                         await Navigator.push(ctx, MaterialPageRoute(
-                          builder: (_) => LyricDetailScreen(item: item),
+                          builder: (_) => LyricDetailScreen(
+                            item: item,
+                            playlist: _items,
+                            initialIndex: i,
+                          ),
                         ));
                         _load(); // refresh if user removed bookmark inside
                       },
