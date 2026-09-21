@@ -18,13 +18,13 @@ class _DuaTabDefinition {
   final String key;
   final String title;
   final String urduTitle;
-  final String icon;
+  final IconData iconData;
 
   const _DuaTabDefinition({
     required this.key,
     required this.title,
     required this.urduTitle,
-    required this.icon,
+    required this.iconData,
   });
 }
 
@@ -35,19 +35,19 @@ class _DuaHubScreenState extends State<DuaHubScreen>
       key: 'duas',
       title: 'Duas',
       urduTitle: 'دعائیں و اعمال',
-      icon: '🤲',
+      iconData: Icons.auto_stories_rounded,
     ),
     _DuaTabDefinition(
       key: 'ziyaraat',
       title: 'Ziyaraat',
       urduTitle: 'زیارات مقدسہ',
-      icon: '🕋',
+      iconData: Icons.place_rounded,
     ),
     _DuaTabDefinition(
       key: 'munaejaat',
       title: 'Munajaat',
       urduTitle: 'مناجات و استغاثہ',
-      icon: '🌹',
+      iconData: Icons.spa_rounded,
     ),
   ];
 
@@ -119,10 +119,12 @@ class _DuaHubScreenState extends State<DuaHubScreen>
         scrolledUnderElevation: 0,
         backgroundColor: AppTheme.card,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: Navigator.canPop(context)
+            ? IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+                onPressed: () => Navigator.pop(context),
+              )
+            : null,
         title: const Text(
           'Dua & Spiritual Portal',
           style: TextStyle(
@@ -139,7 +141,7 @@ class _DuaHubScreenState extends State<DuaHubScreen>
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(108),
+          preferredSize: const Size.fromHeight(114),
           child: Column(
             children: [
               // Real-time Search input
@@ -226,7 +228,7 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(tab.icon, style: const TextStyle(fontSize: 14)),
+                          Icon(tab.iconData, size: 16),
                           const SizedBox(width: 6),
                           Text(tab.title),
                           if (count > 0) ...[
@@ -287,9 +289,10 @@ class _DuaHubScreenState extends State<DuaHubScreen>
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
-                tab.icon,
-                style: const TextStyle(fontSize: 48),
+              Icon(
+                tab.iconData,
+                size: 48,
+                color: AppTheme.textTertiary,
               ),
               const SizedBox(height: 12),
               Text(
@@ -357,7 +360,7 @@ class _DuaHubScreenState extends State<DuaHubScreen>
               ),
             ),
             child: Center(
-              child: Text(tab.icon, style: const TextStyle(fontSize: 18)),
+              child: Icon(tab.iconData, size: 18, color: AppTheme.green),
             ),
           ),
           const SizedBox(width: 12),

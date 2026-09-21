@@ -40,9 +40,13 @@ class DatabaseService {
 
     if (shouldCopy) {
       debugPrint('DatabaseService: copying DB from assets…');
+      final targetFile = File(dbPath);
+      if (!targetFile.parent.existsSync()) {
+        targetFile.parent.createSync(recursive: true);
+      }
       final data = await rootBundle.load('assets/$_dbName');
       final bytes = data.buffer.asUint8List();
-      await File(dbPath).writeAsBytes(bytes, flush: true);
+      await targetFile.writeAsBytes(bytes, flush: true);
       debugPrint('DatabaseService: DB copied (${bytes.length} bytes)');
     }
 

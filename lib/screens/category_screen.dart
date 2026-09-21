@@ -4,6 +4,7 @@ import '../models/lyric_item.dart';
 import '../services/database_service.dart';
 import '../widgets/lyric_row.dart';
 import 'lyric_list_screen.dart';
+import 'dua_hub_screen.dart';
 
 class CategoryScreen extends StatefulWidget {
   final Category category;
@@ -20,6 +21,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
   @override
   void initState() {
     super.initState();
+    if (widget.category.key == 'duas' ||
+        widget.category.key == 'ziyaraat' ||
+        widget.category.key == 'munaejaat') {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.pushReplacement(context, MaterialPageRoute(
+          builder: (_) => DuaHubScreen(initialCategoryKey: widget.category.key),
+        ));
+      });
+      return;
+    }
     DatabaseService.instance.getArtists(widget.category.key).then((artists) {
       if (!mounted) return;
       if (artists.isEmpty) {
@@ -40,7 +52,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('${widget.category.icon} ${widget.category.label}'),
+        title: Text(widget.category.label),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, size: 18),
           onPressed: () => Navigator.pop(context),

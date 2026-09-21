@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/services.dart';
-import 'package:firebase_core/firebase_core.dart';
 
 import 'theme.dart';
 import 'services/database_service.dart';
 import 'services/settings_service.dart';
 import 'services/push_service.dart';
 import 'screens/home_screen.dart';
+import 'screens/dua_hub_screen.dart';
 import 'screens/search_screen.dart';
 import 'screens/tasbih_screen.dart';
 import 'screens/saved_screen.dart';
@@ -36,12 +36,9 @@ void main() async {
 
   if (!kIsWeb) {
     try {
-      // Firebase + Push. Keep this optional so missing Firebase config does not
-      // leave simulator builds stuck on the launch screen.
-      await Firebase.initializeApp();
       await PushNotificationService.instance.init();
     } catch (error, stackTrace) {
-      debugPrint('Push initialization skipped: $error\n$stackTrace');
+      debugPrint('Notification service initialization error: $error\n$stackTrace');
     }
   }
 
@@ -111,11 +108,12 @@ class _MainShellState extends State<MainShell> {
   int _tab = 0;
 
   static const _tabs = [
-    (Icons.home_outlined,     Icons.home,     'Home'),
-    (Icons.search_outlined,   Icons.search,   'Search'),
-    (Icons.blur_circular_outlined, Icons.blur_circular, 'Tasbih'),
-    (Icons.bookmark_outline,  Icons.bookmark, 'Saved'),
-    (Icons.settings_outlined, Icons.settings, 'Settings'),
+    (Icons.home_outlined,         Icons.home,         'Home'),
+    (Icons.menu_book_outlined,    Icons.menu_book,    'Duas'),
+    (Icons.search_outlined,       Icons.search,       'Search'),
+    (Icons.blur_circular_outlined,Icons.blur_circular,'Tasbih'),
+    (Icons.bookmark_outline,      Icons.bookmark,     'Saved'),
+    (Icons.settings_outlined,     Icons.settings,     'Settings'),
   ];
 
   @override
@@ -125,6 +123,7 @@ class _MainShellState extends State<MainShell> {
         index: _tab,
         children: [
           HomeScreen(onSelectTab: (i) => setState(() => _tab = i)),
+          const DuaHubScreen(),
           const SearchScreen(),
           const TasbihScreen(),
           const SavedScreen(),

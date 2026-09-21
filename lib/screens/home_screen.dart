@@ -217,7 +217,7 @@ class _HomeScreenState extends State<HomeScreen> {
             borderRadius: BorderRadius.circular(12),
             child: InkWell(
               borderRadius: BorderRadius.circular(12),
-              onTap: () => widget.onSelectTab?.call(1),
+              onTap: () => widget.onSelectTab?.call(2),
               child: Container(
                 height: 44,
                 padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -283,7 +283,7 @@ class _HomeScreenState extends State<HomeScreen> {
             title: 'Digital Tasbih',
             subtitle: 'Count Dhikr',
             iconColor: AppTheme.green,
-            onTap: () => widget.onSelectTab?.call(2),
+            onTap: () => widget.onSelectTab?.call(3),
           ),
         ),
         const SizedBox(width: 12),
@@ -293,7 +293,7 @@ class _HomeScreenState extends State<HomeScreen> {
             title: 'Saved Lyrics',
             subtitle: 'Quick Bookmarks',
             iconColor: const Color(0xFFC07D15),
-            onTap: () => widget.onSelectTab?.call(3),
+            onTap: () => widget.onSelectTab?.call(4),
           ),
         ),
       ],
@@ -505,9 +505,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Center(
-                          child: Text(
-                            cat.icon,
-                            style: const TextStyle(fontSize: 20),
+                          child: Icon(
+                            AppCategories.getIcon(cat.key),
+                            color: AppTheme.green,
+                            size: 20,
                           ),
                         ),
                       ),
@@ -574,6 +575,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openCategory(Category cat) {
     if (cat.key == 'duas' || cat.key == 'ziyaraat' || cat.key == 'munaejaat') {
+      if (widget.onSelectTab != null) {
+        widget.onSelectTab!(1);
+        return;
+      }
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -631,9 +636,10 @@ class _FeaturedCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Center(
-                      child: Text(
-                        cat.icon,
-                        style: const TextStyle(fontSize: 20),
+                      child: Icon(
+                        AppCategories.getIcon(cat.key),
+                        color: AppTheme.green,
+                        size: 20,
                       ),
                     ),
                   ),

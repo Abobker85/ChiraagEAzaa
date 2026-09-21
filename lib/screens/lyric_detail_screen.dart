@@ -41,9 +41,22 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
     } else {
       _playlist = [widget.item];
       _currentIndex = 0;
+      _loadPlaylistFromDb();
     }
 
     _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  Future<void> _loadPlaylistFromDb() async {
+    final db = DatabaseService.instance;
+    final items = await db.getLyricsByCategory(widget.item.categoryKey);
+    if (!mounted || items.isEmpty || items.length <= 1) return;
+    final idx = items.indexWhere((it) => it.id == widget.item.id);
+    setState(() {
+      _playlist = items;
+      _currentIndex = idx >= 0 ? idx : 0;
+      _pageController.jumpToPage(_currentIndex);
+    });
   }
 
   @override
@@ -501,135 +514,150 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
     final isFirst = _currentIndex == 0;
     final isLast = _currentIndex >= _playlist.length - 1;
 
-    return Container(
-      height: 56,
-      decoration: BoxDecoration(
-        color: AppTheme.card,
-        border: Border(
-          top: BorderSide(
-            color: Colors.black.withValues(alpha: 0.08),
-            width: 0.8,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 6,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          // Previous button
-          InkWell(
-            borderRadius: BorderRadius.circular(8),
-            onTap: isFirst
-                ? null
-                : () {
-                    _pageController.previousPage(
-                      duration: const Duration(milliseconds: 280),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.arrow_back_ios_rounded,
-                    size: 14,
-                    color: isFirst ? AppTheme.textTertiary : AppTheme.green,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Prev',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isFirst ? AppTheme.textTertiary : AppTheme.green,
-                    ),
-                  ),
-                ],
-              ),
+    return SafeArea(
+      top: false,
+      child: Container(
+        height: 56,
+        decoration: BoxDecoration(
+          color: AppTheme.card,
+          border: Border(
+            top: BorderSide(
+              color: Colors.black.withValues(alpha: 0.08),
+              width: 0.8,
             ),
           ),
-          // Center Index button (tappable to open table of recitations)
-          Material(
-            color: AppTheme.greenPale,
-            borderRadius: BorderRadius.circular(16),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(16),
-              onTap: _showPlaylistIndexSheet,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 6,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Previous button
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: isFirst
+                  ? null
+                  : () {
+                      _pageController.previousPage(
+                        duration: const Duration(milliseconds: 280),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.format_list_bulleted_rounded,
-                      size: 15,
-                      color: AppTheme.green,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${_currentIndex + 1} / ${_playlist.length}',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: AppTheme.green,
-                      ),
+                    Icon(
+                      Icons.arrow_back_ios_rounded,
+                      size: 14,
+                      color: isFirst ? AppTheme.textTertiary : AppTheme.green,
                     ),
                     const SizedBox(width: 4),
-                    const Icon(
-                      Icons.keyboard_arrow_up_rounded,
-                      size: 16,
-                      color: AppTheme.green,
+                    Text(
+                      'Prev',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isFirst ? AppTheme.textTertiary : AppTheme.green,
+                      ),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
-          // Next button
-          InkWell(
-            borderRadius: BorderRadius.circular(8),
-            onTap: isLast
-                ? null
-                : () {
-                    _pageController.nextPage(
-                      duration: const Duration(milliseconds: 280),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: Row(
-                children: [
-                  Text(
-                    'Next',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                      color: isLast ? AppTheme.textTertiary : AppTheme.green,
-                    ),
+            // Center Index button (tappable to open table of recitations)
+            Material(
+              color: AppTheme.greenPale,
+              borderRadius: BorderRadius.circular(16),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(16),
+                onTap: _showPlaylistIndexSheet,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.format_list_bulleted_rounded,
+                        size: 15,
+                        color: AppTheme.green,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${_currentIndex + 1} / ${_playlist.length}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.green,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(
+                        Icons.keyboard_arrow_up_rounded,
+                        size: 16,
+                        color: AppTheme.green,
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: isLast ? AppTheme.textTertiary : AppTheme.green,
-                  ),
-                ],
+                ),
               ),
             ),
-          ),
-        ],
+            // Next button
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: isLast
+                  ? null
+                  : () {
+                      _pageController.nextPage(
+                        duration: const Duration(milliseconds: 280),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                child: Row(
+                  children: [
+                    Text(
+                      'Next',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isLast ? AppTheme.textTertiary : AppTheme.green,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      size: 14,
+                      color: isLast ? AppTheme.textTertiary : AppTheme.green,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+/// Structured recitation content block with script and role awareness.
+class _ContentBlock {
+  final String text;
+  final bool isArabic;
+  final bool isInstruction;
+
+  const _ContentBlock({
+    required this.text,
+    required this.isArabic,
+    this.isInstruction = false,
+  });
 }
 
 /// Internal page view rendering the content of a single recitation.
@@ -648,6 +676,7 @@ class _LyricPageView extends StatefulWidget {
 
 class _LyricPageViewState extends State<_LyricPageView> {
   String? _html;
+  List<_ContentBlock> _blocks = [];
   bool _loading = true;
   late bool _isRtl;
   final ScrollController _scrollController = ScrollController();
@@ -682,57 +711,85 @@ class _LyricPageViewState extends State<_LyricPageView> {
   Future<void> _load() async {
     final detail = await DatabaseService.instance.getLyricDetail(widget.item.id);
     if (!mounted) return;
-    final html = detail != null ? _processHtml(detail.contentHtml, _isRtl) : null;
+    final raw = detail?.contentHtml;
+    final blocks = raw != null && _isRtl ? _parseBlocks(raw) : <_ContentBlock>[];
     setState(() {
-      _html = html;
+      _html = raw;
+      _blocks = blocks;
       _loading = false;
     });
-    widget.onContentLoaded(html);
+    widget.onContentLoaded(raw);
   }
 
-  String _processHtml(String raw, bool rtl) {
-    var h = raw
+  List<_ContentBlock> _parseBlocks(String raw) {
+    // 1. Decode HTML entities first so Arabic entity codes turn into Arabic characters
+    var text = _cleanHtmlEntities(raw)
         .replaceAll(RegExp(r'<script[\s\S]*?<\/script>', caseSensitive: false), '')
         .replaceAll(RegExp(r'<div[^>]*id="urduTextPath"[^>]*>[\s\S]*?<\/div>', caseSensitive: false), '')
-        .replaceAll(RegExp(r'<div[^>]*>', caseSensitive: false), '')
-        .replaceAll(RegExp(r'<\/div>', caseSensitive: false), '')
+        .replaceAll(RegExp(r'<\/?(div|span)[^>]*>', caseSensitive: false), '')
         .replaceAll('&nbsp;', ' ')
+        .replaceAll(RegExp(r'\s*style="[^"]*"', caseSensitive: false), '')
         .trim();
 
-    h = h.replaceAll(RegExp(r'\s*style="[^"]*"', caseSensitive: false), '');
-    h = h.replaceAll(RegExp(r'<\/?span[^>]*>', caseSensitive: false), '');
+    // 2. Normalize paragraph and break boundaries
+    text = text.replaceAll(RegExp(r'<\/?(p|blockquote)[^>]*>', caseSensitive: false), '\n\n');
+    text = text.replaceAll(RegExp(r'<br\s*\/?>', caseSensitive: false), '\n');
 
-    if (rtl) {
-      h = h.replaceAll(RegExp(r'<\/?p[^>]*>', caseSensitive: false), '');
-      h = h.replaceAll(RegExp(r'(<br\s*\/?>\s*){2,}', caseSensitive: false), '\n\n');
-      h = h.replaceAll(RegExp(r'<br\s*\/?>', caseSensitive: false), '\n');
-      final lines = h.split(RegExp(r'\n+')).map((l) => l.trim()).where((l) => l.isNotEmpty);
-      final isArabicCategory = _isArabicCategory(widget.item.categoryKey);
-      h = lines.map((l) {
-        if (isArabicCategory) {
-          return '<blockquote dir="rtl">$l</blockquote>';
-        } else {
-          return '<p dir="rtl">$l</p>';
-        }
-      }).join('');
-    } else {
-      final blocks = h
-          .replaceAll(RegExp(r'<br\s*\/?>\s*\n?', caseSensitive: false), '\n')
-          .split(RegExp(r'\n{2,}'));
-      h = blocks
-          .map((b) {
-            final t = b.trim();
-            return t.isEmpty ? '' : '<p>${t.replaceAll('\n', '<br>')}</p>';
-          })
-          .where((b) => b.isNotEmpty)
-          .join('');
+    // 3. Split transition from Latin punctuation directly into Arabic text
+    text = text.replaceAllMapped(
+      RegExp(r'([a-zA-Z0-9\.\,\:\;\)\"]+[\:\.\!])\s*([\u0600-\u06FF])'),
+      (m) => '${m.group(1)}\n\n${m.group(2)}',
+    );
+
+    final rawChunks = text.split(RegExp(r'\n{2,}'));
+    final blocks = <_ContentBlock>[];
+
+    for (final chunk in rawChunks) {
+      final clean = chunk.replaceAll(RegExp(r'<[^>]+>'), '').trim();
+      if (clean.isEmpty) continue;
+
+      final arabicCount = RegExp(r'[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]').allMatches(clean).length;
+      final latinCount = RegExp(r'[a-zA-Z]').allMatches(clean).length;
+
+      final isArabic = arabicCount > latinCount;
+      final lower = clean.toLowerCase();
+      final isInstruction = !isArabic && (
+        clean.endsWith(':') ||
+        lower.contains('supplication') ||
+        lower.contains('reported from') ||
+        lower.contains('peace be upon') ||
+        lower.contains('beseech') ||
+        lower.contains('merits') ||
+        lower.contains('repeat') ||
+        lower.contains('times') ||
+        lower.contains('then say')
+      );
+
+      blocks.add(_ContentBlock(
+        text: clean,
+        isArabic: isArabic,
+        isInstruction: isInstruction,
+      ));
     }
-    return h;
+
+    return blocks;
   }
 
-  static bool _isArabicCategory(String categoryKey) {
-    final key = categoryKey.split('/').first;
-    return key == 'duas' || key == 'ziyaraat' || key == 'munaejaat';
+  static String _cleanHtmlEntities(String s) {
+    return s
+        .replaceAll('&amp;', '&')
+        .replaceAll('&lt;', '<')
+        .replaceAll('&gt;', '>')
+        .replaceAll('&#39;', "'")
+        .replaceAll('&quot;', '"')
+        .replaceAll('&rsquo;', "'")
+        .replaceAll('&lsquo;', "'")
+        .replaceAll('&rdquo;', '"')
+        .replaceAll('&ldquo;', '"')
+        .replaceAllMapped(RegExp(r'&#x([0-9a-fA-F]+);'), (m) =>
+            String.fromCharCode(int.parse(m.group(1)!, radix: 16)))
+        .replaceAllMapped(RegExp(r'&#(\d+);'), (m) =>
+            String.fromCharCode(int.parse(m.group(1)!)));
   }
 
   @override
@@ -762,7 +819,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                 children: [
                   AudioPlayerWidget(lyricId: widget.item.id),
                   if (_isRtl)
-                    ..._buildRtlParagraphs(s)
+                    ..._buildParsedBlocks(s)
                   else
                     Padding(
                       padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + s.paraSpacing),
@@ -808,87 +865,110 @@ class _LyricPageViewState extends State<_LyricPageView> {
     );
   }
 
-  List<Widget> _buildRtlParagraphs(AppSettings s) {
-    if (_html == null) return [];
-    final allTags = RegExp(r'<(blockquote|p)[^>]*>(.*?)</\1>', dotAll: true);
-    final matches = allTags.allMatches(_html!);
-
-    final widgets = <Widget>[];
-    for (final m in matches) {
-      final tag = m.group(1)!;
-      final content = m.group(2)!;
-      final plainText = content
-          .replaceAll(RegExp(r'<[^>]+>'), '')
-          .replaceAll('&amp;', '&')
-          .replaceAll('&lt;', '<')
-          .replaceAll('&gt;', '>')
-          .replaceAll('&#39;', "'")
-          .replaceAll('&quot;', '"')
-          .replaceAllMapped(RegExp(r'&#x([0-9a-fA-F]+);'), (m) =>
-              String.fromCharCode(int.parse(m.group(1)!, radix: 16)))
-          .replaceAllMapped(RegExp(r'&#(\d+);'), (m) =>
-              String.fromCharCode(int.parse(m.group(1)!)))
-          .trim();
-      if (plainText.isEmpty) continue;
-
-      final isArabic = tag == 'blockquote';
-      final textStyle = TextStyle(
-        fontSize: isArabic ? s.arabicFontSize : s.rtlFontSize,
-        height: isArabic ? s.lineHeight + 0.3 : s.lineHeight,
-        fontFamily: 'NotoNaskhArabic',
-        color: AppTheme.textPrimary,
-      );
-
-      widgets.add(
+  List<Widget> _buildParsedBlocks(AppSettings s) {
+    if (_blocks.isEmpty) {
+      if (_html == null) return [];
+      final clean = _cleanHtmlEntities(_html!.replaceAll(RegExp(r'<[^>]+>'), '')).trim();
+      return [
         Padding(
-          padding: EdgeInsets.fromLTRB(
-            16,
-            widgets.isEmpty ? 8 : 0,
-            16,
-            isArabic ? s.paraSpacing + 20 : s.paraSpacing + 14,
-          ),
-          child: Directionality(
-            textDirection: TextDirection.rtl,
-            child: Text(
-              plainText,
-              textAlign: TextAlign.right,
-              style: textStyle,
-            ),
-          ),
+          padding: const EdgeInsets.all(16),
+          child: Text(clean, style: TextStyle(fontSize: s.ltrFontSize)),
         ),
-      );
+      ];
     }
 
-    if (widgets.isEmpty) {
-      final plainText = _html!
-          .replaceAll(RegExp(r'<[^>]+>'), '')
-          .replaceAll('&amp;', '&')
-          .replaceAll('&lt;', '<')
-          .replaceAll('&gt;', '>')
-          .replaceAllMapped(RegExp(r'&#x([0-9a-fA-F]+);'), (m) =>
-              String.fromCharCode(int.parse(m.group(1)!, radix: 16)))
-          .replaceAllMapped(RegExp(r'&#(\d+);'), (m) =>
-              String.fromCharCode(int.parse(m.group(1)!)))
-          .trim();
-      widgets.add(
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: Directionality(
-            textDirection: TextDirection.rtl,
-            child: Text(
-              plainText,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                fontSize: s.arabicFontSize,
-                height: s.lineHeight + 0.3,
-                fontFamily: 'NotoNaskhArabic',
-                color: AppTheme.textPrimary,
+    final widgets = <Widget>[];
+    for (int i = 0; i < _blocks.length; i++) {
+      final block = _blocks[i];
+
+      if (block.isInstruction) {
+        widgets.add(
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppTheme.greenPale.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppTheme.green.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.info_outline_rounded,
+                  size: 18,
+                  color: AppTheme.green,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Directionality(
+                    textDirection: TextDirection.ltr,
+                    child: Text(
+                      block.text,
+                      textAlign: TextAlign.left,
+                      style: TextStyle(
+                        fontSize: s.ltrFontSize.clamp(13.0, 16.0),
+                        height: 1.5,
+                        color: AppTheme.textPrimary.withValues(alpha: 0.88),
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      } else if (!block.isArabic) {
+        // English or Roman Urdu text (e.g. Munajaat poetry or title)
+        final isTitle = i == 0 && block.text.length < 50;
+        widgets.add(
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, isTitle ? 8 : 4, 16, s.paraSpacing + (isTitle ? 12 : 6)),
+            child: Directionality(
+              textDirection: TextDirection.ltr,
+              child: Text(
+                block.text,
+                textAlign: TextAlign.left,
+                style: TextStyle(
+                  fontSize: isTitle ? s.ltrFontSize + 3 : s.ltrFontSize,
+                  fontWeight: isTitle ? FontWeight.bold : FontWeight.w500,
+                  height: s.lineHeight,
+                  color: isTitle ? AppTheme.green : AppTheme.textPrimary,
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
+      } else {
+        // Arabic / Urdu script text
+        widgets.add(
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              16,
+              widgets.isEmpty ? 8 : 4,
+              16,
+              s.paraSpacing + 16,
+            ),
+            child: Directionality(
+              textDirection: TextDirection.rtl,
+              child: Text(
+                block.text,
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontSize: s.arabicFontSize,
+                  height: s.lineHeight + 0.3,
+                  fontFamily: 'NotoSansArabic',
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
     }
+
     return widgets;
   }
 }
+

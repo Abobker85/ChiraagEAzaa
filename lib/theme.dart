@@ -18,6 +18,8 @@ class AppTheme {
 
   static ThemeData get light => ThemeData(
     useMaterial3: true,
+    fontFamily: 'NotoSansArabic',
+    fontFamilyFallback: const ['NotoEmoji', 'Arial', 'Roboto'],
     colorScheme: ColorScheme.fromSeed(
       seedColor: green,
       primary: green,
@@ -73,6 +75,35 @@ class AppCategories {
       return all.firstWhere((c) => c['key'] == key);
     } catch (_) {
       return null;
+    }
+  }
+
+  static IconData getIcon(String key) {
+    switch (key) {
+      case 'nouhay':
+        return Icons.nights_stay_rounded;
+      case 'nouhaDarHaal':
+        return Icons.water_drop_rounded;
+      case 'marsias':
+        return Icons.menu_book_rounded;
+      case 'manqabat':
+        return Icons.star_rounded;
+      case 'qasiday':
+        return Icons.wb_sunny_rounded;
+      case 'duas':
+        return Icons.auto_stories_rounded;
+      case 'salaam':
+        return Icons.front_hand_rounded;
+      case 'munaejaat':
+        return Icons.spa_rounded;
+      case 'ziyaraat':
+        return Icons.place_rounded;
+      case 'oldNouhay':
+        return Icons.history_edu_rounded;
+      case 'urduMarsiye':
+        return Icons.library_books_rounded;
+      default:
+        return Icons.book_rounded;
     }
   }
 }

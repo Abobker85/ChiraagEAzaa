@@ -173,6 +173,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               _infoRow('Total Lyrics', 'Nouhay, Marsias, Duas & more', trailing: const Text('5,128', style: TextStyle(color: AppTheme.textSecondary))),
               const Divider(height: 1, thickness: 0.5, color: AppTheme.separator),
               _infoRow('Offline Mode', 'Works without internet', trailing: const Text('✅', style: TextStyle(fontSize: 20))),
+            ]),
+            _sectionHeader('Notifications & Reminders'),
+            _settingsCard([
+              _dailyReminderTile(),
+              const Divider(height: 1, thickness: 0.5, color: AppTheme.separator),
+              _testNotificationTile(),
               const Divider(height: 1, thickness: 0.5, color: AppTheme.separator),
               _pushRow(),
             ]),
@@ -220,6 +226,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
           : Text(icon, style: const TextStyle(fontSize: 20)),
       onTap: denied ? null : _togglePush,
+    );
+  }
+
+  Widget _dailyReminderTile() {
+    if (kIsWeb) return const SizedBox.shrink();
+    return SwitchListTile(
+      secondary: const Icon(Icons.alarm_on_rounded, color: AppTheme.green),
+      title: const Text('Daily Recitation Reminders'),
+      subtitle: Text(
+        'Device Language: ${PushNotificationService.getDeviceLanguageDisplay()}',
+        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+      ),
+      activeThumbColor: AppTheme.green,
+      activeTrackColor: AppTheme.greenPale,
+      value: _s.dailyRemindersEnabled,
+      onChanged: (val) async {
+        _s.dailyRemindersEnabled = val;
+        await _s.save();
+        if (val) {
+          final granted = await PushNotificationService.instance.requestPermission();
+          if (granted) {
+            await PushNotificationService.instance.scheduleDailyReminders();
+            _showToast('Daily reminders enabled 🔔');
+          } else {
+            _showToast('Notification permission denied');
+          }
+        } else {
+          await PushNotificationService.instance.cancelDailyReminders();
+          _showToast('Daily reminders disabled');
+        }
+      },
+    );
+  }
+
+  Widget _testNotificationTile() {
+    if (kIsWeb) return const SizedBox.shrink();
+    return ListTile(
+      leading: const Icon(Icons.notifications_active_outlined, color: AppTheme.green),
+      title: const Text('Send Test Notification Now'),
+      subtitle: Text(
+        'Sends a system alert in ${PushNotificationService.getDeviceLanguageDisplay()}',
+        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+      ),
+      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppTheme.textTertiary),
+      onTap: () async {
+        final success = await PushNotificationService.instance.showTestNotification();
+        if (success) {
+          _showToast('Test notification sent (${PushNotificationService.getDeviceLanguageDisplay()}) 📲');
+        } else {
+          _showToast('Could not send notification. Please grant permission.');
+        }
+      },
     );
   }
 
