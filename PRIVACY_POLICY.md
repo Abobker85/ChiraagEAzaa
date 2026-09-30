@@ -53,13 +53,24 @@ We value your trust in using our application. Since we do not collect personal i
 
 ---
 
-## 7. Changes to This Privacy Policy
+## 7. Content Origin, Attribution & Copyright Compliance
+
+Chiraag e Azaa operates as an open, non-commercial spiritual reference library and devotional anthology intended solely for personal study and religious congregational observance (Majalis):
+
+- **Classical Liturgical Corpus:** The supplications (Duas), salutations (Ziyaraat), and Quranic verses included in the application originate from classical Islamic liturgical heritage (such as *Mafatih al-Jinan* and classical compendiums from the 7th–10th centuries CE) and are part of the historical public domain.
+- **Classical Marsias & Elegies:** Classical Urdu Marsias contained in the app are 19th-century works authored by classical poets (including Mir Babar Ali Anis, 1803–1874, and Mirza Salaamat Ali Dabeer, 1803–1875), which have been in the public domain for over a century.
+- **Contemporary Devotional Eulogies (Nauhay & Manqabat):** Contemporary devotional lyrics are compiled from traditional community anthologies for non-commercial devotional recitation. Each entry features prominent attribution to the credited poet, reciter (artist), and publication year directly in the reading interface. The app does not monetize, sell, or license this content.
+- **Notice and Takedown Policy:** We respect all intellectual property rights. If you are a copyright holder, authorized representative, or heirs of any content featured in the app and wish to modify attribution or request removal, please contact us immediately at [gisdevpr31@gmail.com](mailto:gisdevpr31@gmail.com). Valid requests will be processed promptly within 48 hours.
+
+---
+
+## 8. Changes to This Privacy Policy
 
 We may update our Privacy Policy from time to time. You are advised to review this page periodically for any changes.
 
 ---
 
-## 8. Contact Us
+## 9. Contact Us
 
 If you have any questions or suggestions about our Privacy Policy or support inquiries, please contact us:
 
