@@ -13,34 +13,16 @@ import 'screens/tasbih_screen.dart';
 import 'screens/saved_screen.dart';
 import 'screens/settings_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await SystemChrome.setPreferredOrientations(
-      [DeviceOrientation.portraitUp, DeviceOrientation.portraitDown]);
-
-  try {
-    // Copy DB from assets to device on first launch
-    await DatabaseService.instance.db;
-
-    // Load bookmarks into in-memory cache
-    await DatabaseService.instance.loadBookmarkIds();
-
-    // Load settings from DB
-    await AppSettings.instance.load();
-  } catch (error, stackTrace) {
-    debugPrint('Startup failed: $error\n$stackTrace');
-    runApp(ChiraagApp(home: StartupErrorScreen(message: error.toString())));
-    return;
-  }
-
-  if (!kIsWeb) {
-    try {
-      await PushNotificationService.instance.init();
-    } catch (error, stackTrace) {
-      debugPrint('Notification service initialization error: $error\n$stackTrace');
-    }
-  }
+  // Allow portrait and landscape so iPad and tablets never crash in orientation lock
+  SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
 
   runApp(const ChiraagApp());
 }
@@ -48,7 +30,7 @@ void main() async {
 class ChiraagApp extends StatelessWidget {
   final Widget home;
 
-  const ChiraagApp({super.key, this.home = const MainShell()});
+  const ChiraagApp({super.key, this.home = const AppInitializer()});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -59,39 +41,157 @@ class ChiraagApp extends StatelessWidget {
   );
 }
 
-class StartupErrorScreen extends StatelessWidget {
-  final String message;
+/// Responsive startup initializer that displays an immediate spiritual splash
+/// screen while loading the local database, preventing any launch timeouts or watchdog kills.
+class AppInitializer extends StatefulWidget {
+  const AppInitializer({super.key});
 
-  const StartupErrorScreen({super.key, required this.message});
+  @override
+  State<AppInitializer> createState() => _AppInitializerState();
+}
+
+class _AppInitializerState extends State<AppInitializer> {
+  bool _initialized = false;
+  String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _startInitialization();
+  }
+
+  Future<void> _startInitialization() async {
+    setState(() {
+      _errorMessage = null;
+    });
+
+    try {
+      // 1. Initialize local SQLite database
+      await DatabaseService.instance.db;
+
+      // 2. Load bookmarks cache
+      await DatabaseService.instance.loadBookmarkIds();
+
+      // 3. Load user settings
+      await AppSettings.instance.load();
+
+      // 4. Initialize notifications (non-blocking)
+      if (!kIsWeb) {
+        PushNotificationService.instance.init().catchError((error) {
+          debugPrint('Notification init error: $error');
+        });
+      }
+
+      if (mounted) {
+        setState(() {
+          _initialized = true;
+        });
+      }
+    } catch (error, stackTrace) {
+      debugPrint('Startup error: $error\n$stackTrace');
+      if (mounted) {
+        setState(() {
+          _errorMessage = error.toString();
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Chiraag e Azaa')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.error_outline, color: AppTheme.errorRed, size: 48),
-              const SizedBox(height: 16),
-              const Text(
-                'App startup failed',
-                style: TextStyle(
-                  color: AppTheme.textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
+    if (_initialized) {
+      return const MainShell();
+    }
+
+    if (_errorMessage != null) {
+      return Scaffold(
+        backgroundColor: AppTheme.bg,
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(28),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.error_outline_rounded, color: AppTheme.errorRed, size: 54),
+                const SizedBox(height: 16),
+                const Text(
+                  'Initialization Notice',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.textPrimary,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: AppTheme.textSecondary),
-              ),
-            ],
+                const SizedBox(height: 8),
+                Text(
+                  _errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: _startInitialization,
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Retry'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.green,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ],
+            ),
           ),
+        ),
+      );
+    }
+
+    // Immediate Splash Screen with brand identity while loading
+    return Scaffold(
+      backgroundColor: const Color(0xFF165225),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: Image.asset(
+                'assets/icon/app_icon.png',
+                width: 90,
+                height: 90,
+                fit: BoxFit.cover,
+              ),
+            ),
+            const SizedBox(height: 22),
+            const Text(
+              'چراغ عزا',
+              style: TextStyle(
+                fontFamily: 'NotoSansArabic',
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.gold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Chiraag e Azaa',
+              style: TextStyle(
+                fontSize: 16,
+                letterSpacing: 0.8,
+                color: Colors.white70,
+              ),
+            ),
+            const SizedBox(height: 36),
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                strokeWidth: 2.4,
+                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.gold),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -48,13 +48,23 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadCategories() async {
-    final cats = await DatabaseService.instance.getCategories();
-    if (mounted) {
-      final total = cats.fold<int>(0, (sum, c) => sum + c.count);
-      setState(() {
-        _cats = cats;
-        _totalCount = total;
-      });
+    try {
+      final cats = await DatabaseService.instance.getCategories();
+      if (mounted) {
+        final total = cats.fold<int>(0, (sum, c) => sum + c.count);
+        setState(() {
+          _cats = cats;
+          _totalCount = total;
+        });
+      }
+    } catch (e) {
+      debugPrint('HomeScreen: Error loading categories: $e');
+      if (mounted) {
+        setState(() {
+          _cats = [];
+          _totalCount = 0;
+        });
+      }
     }
   }
 

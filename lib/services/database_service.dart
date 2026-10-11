@@ -34,7 +34,7 @@ class DatabaseService {
     final dbDir = await getDatabasesPath();
     final dbPath = join(dbDir, _dbName);
 
-    // Copy from assets if not yet on device OR version changed
+    // Copy from assets if not yet on device OR version changed OR corrupt
     final shouldCopy = !File(dbPath).existsSync() ||
         await _needsUpdate(dbPath);
 
@@ -45,12 +45,39 @@ class DatabaseService {
         targetFile.parent.createSync(recursive: true);
       }
       final data = await rootBundle.load('assets/$_dbName');
-      final bytes = data.buffer.asUint8List();
-      await targetFile.writeAsBytes(bytes, flush: true);
+      final bytes = data.buffer.asUint8List(
+        data.offsetInBytes,
+        data.lengthInBytes,
+      );
+      final tempFile = File('$dbPath.tmp');
+      await tempFile.writeAsBytes(bytes, flush: true);
+      if (targetFile.existsSync()) {
+        try {
+          await targetFile.delete();
+        } catch (_) {}
+      }
+      await tempFile.rename(dbPath);
       debugPrint('DatabaseService: DB copied (${bytes.length} bytes)');
     }
 
-    return openDatabase(dbPath, readOnly: false, version: _dbVersion);
+    try {
+      return await openDatabase(dbPath, readOnly: false, version: _dbVersion);
+    } catch (e) {
+      debugPrint('DatabaseService: Failed to open DB ($e), performing clean recovery copy...');
+      final targetFile = File(dbPath);
+      if (targetFile.existsSync()) {
+        try {
+          await targetFile.delete();
+        } catch (_) {}
+      }
+      final data = await rootBundle.load('assets/$_dbName');
+      final bytes = data.buffer.asUint8List(
+        data.offsetInBytes,
+        data.lengthInBytes,
+      );
+      await targetFile.writeAsBytes(bytes, flush: true);
+      return openDatabase(dbPath, readOnly: false, version: _dbVersion);
+    }
   }
 
   Future<Database> _openWeb() async {
@@ -74,6 +101,10 @@ class DatabaseService {
   /// Compare stored user_version with our expected version.
   Future<bool> _needsUpdate(String path) async {
     try {
+      final file = File(path);
+      if (!file.existsSync() || file.lengthSync() < 1000000) {
+        return true;
+      }
       final existing = await openDatabase(path, readOnly: true);
       final rows = await existing.rawQuery('PRAGMA user_version');
       await existing.close();
