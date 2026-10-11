@@ -34,11 +34,15 @@ workflows:
         script: xcode-project use-profiles
       - name: Flutter build ipa
         script: |
-          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || true)
-          if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]]; then
-            LATEST_BUILD=0
+          echo "Querying App Store Connect for latest build number under Apple ID: $APP_STORE_APPLE_ID"
+          LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>&1 || true)
+          echo "App Store Connect response: $LATEST_BUILD"
+          if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]] || [ "$LATEST_BUILD" -lt 5 ]; then
+            echo "Latest build is empty, non-numeric, or < 5. Setting base to 5 (Apple reviewed build 5)."
+            LATEST_BUILD=5
           fi
           BUILD_NUMBER=$((LATEST_BUILD + 1))
+          echo "Building iOS IPA with build number: $BUILD_NUMBER"
           flutter build ipa --release \
             --build-number="$BUILD_NUMBER" \
             --export-options-plist=/Users/builder/export_options.plist
