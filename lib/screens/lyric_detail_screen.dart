@@ -5,7 +5,6 @@ import '../theme.dart';
 import '../models/lyric_item.dart';
 import '../services/database_service.dart';
 import '../services/settings_service.dart';
-import '../widgets/audio_player_widget.dart';
 
 class LyricDetailScreen extends StatefulWidget {
   final LyricItem item;
@@ -817,7 +816,6 @@ class _LyricPageViewState extends State<_LyricPageView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  AudioPlayerWidget(lyricId: widget.item.id),
                   if (_isRtl)
                     ..._buildParsedBlocks(s)
                   else

@@ -28,9 +28,9 @@ We do not collect, transmit, or sell this information to external servers.
 
 ---
 
-## 3. Audio Streaming (Optional)
+## 3. Offline Devotional Content (Text-Only)
 
-When streaming audio for recitations, the app connects to secure content delivery networks (CDNs) or media servers to retrieve the requested audio file. Standard network logs (such as IP addresses and requests for specific audio tracks) may be processed by the hosting provider solely for content delivery and streaming performance.
+Chiraag e Azaa operates as a standalone, offline-first devotional text reader. The app does not record, stream, or transmit audio files, voice recordings, or microphone data. All recitation text and liturgical content are bundled locally within the app database.
 
 ---
 

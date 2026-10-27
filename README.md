@@ -62,17 +62,8 @@ Download from https://fonts.google.com and place in `assets/fonts/`:
 - `Amiri-Regular.ttf`
 - `Amiri-Bold.ttf`
 
-### 4. Audio
-Update the URL in `lib/widgets/audio_player_widget.dart`:
-```dart
-await _player.setUrl('https://yourserver.com/audio/${widget.lyricId}.mp3');
-```
-Or use local assets:
-```dart
-await _player.setAsset('assets/audio/${widget.lyricId}.mp3');
-```
 
-### 5. Run
+### 4. Run
 ```bash
 flutter pub get
 flutter run
@@ -93,12 +84,12 @@ lib/
 │   └── push_service.dart             # Firebase Cloud Messaging
 ├── widgets/
 │   ├── lyric_row.dart                # List row + SectionCard
-│   └── audio_player_widget.dart      # just_audio player UI
+
 └── screens/
     ├── home_screen.dart              # Category list (loaded from DB)
     ├── category_screen.dart          # Artists → years drill-down
     ├── lyric_list_screen.dart        # Lyrics list (DB query)
-    ├── lyric_detail_screen.dart      # Lyric content + audio + bookmark
+    ├── lyric_detail_screen.dart      # Lyric content + bookmark
     ├── search_screen.dart            # FTS5 live search
     ├── tasbih_screen.dart            # Tasbih counter
     ├── saved_screen.dart             # Bookmarks (from DB)

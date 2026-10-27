@@ -37,9 +37,9 @@ workflows:
           echo "Querying App Store Connect for latest build number under Apple ID: $APP_STORE_APPLE_ID"
           LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>&1 || true)
           echo "App Store Connect response: $LATEST_BUILD"
-          if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]] || [ "$LATEST_BUILD" -lt 5 ]; then
-            echo "Latest build is empty, non-numeric, or < 5. Setting base to 5 (Apple reviewed build 5)."
-            LATEST_BUILD=5
+          if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]] || [ "$LATEST_BUILD" -lt 6 ]; then
+            echo "Latest build is empty, non-numeric, or < 6. Setting base to 6 (Apple reviewed build 6)."
+            LATEST_BUILD=6
           fi
           BUILD_NUMBER=$((LATEST_BUILD + 1))
           echo "Building iOS IPA with build number: $BUILD_NUMBER"
