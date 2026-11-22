@@ -37,11 +37,15 @@ workflows:
           echo "Querying App Store Connect for latest build number under Apple ID: $APP_STORE_APPLE_ID"
           LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>&1 || true)
           echo "App Store Connect response: $LATEST_BUILD"
-          if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]] || [ "$LATEST_BUILD" -lt 6 ]; then
-            echo "Latest build is empty, non-numeric, or < 6. Setting base to 6 (Apple reviewed build 6)."
-            LATEST_BUILD=6
+          if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]] || [ "$LATEST_BUILD" -lt 7 ]; then
+            echo "Latest build is empty, non-numeric, or < 7. Setting base to 7 (Build 7 already uploaded)."
+            LATEST_BUILD=7
           fi
           BUILD_NUMBER=$((LATEST_BUILD + 1))
+          PUBSPEC_BUILD=$(grep -E '^version:' pubspec.yaml | sed -E 's/.*\+([0-9]+).*/\1/' || true)
+          if [[ "$PUBSPEC_BUILD" =~ ^[0-9]+$ ]] && [ "$PUBSPEC_BUILD" -gt "$BUILD_NUMBER" ]; then
+            BUILD_NUMBER=$PUBSPEC_BUILD
+          fi
           echo "Building iOS IPA with build number: $BUILD_NUMBER"
           flutter build ipa --release \
             --build-number="$BUILD_NUMBER" \
