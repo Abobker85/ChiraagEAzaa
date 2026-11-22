@@ -51,6 +51,7 @@ flutter:
   assets:
     - assets/chiraag_e_azaa.db
     - assets/icon/
+    - assets/images/
     - assets/fonts/
 
   fonts:
