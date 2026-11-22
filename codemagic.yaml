@@ -25,8 +25,11 @@ workflows:
       - name: Prepare Flutter iOS configuration
         script: |
           flutter pub get
-          flutter build ios --config-only --release --no-codesign
+          BUILD_NAME=$(grep -E '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/')
+          echo "Detected pubspec build name: $BUILD_NAME"
+          flutter build ios --config-only --release --no-codesign --build-name="$BUILD_NAME"
           test -f ios/Flutter/Generated.xcconfig
+          grep -E 'FLUTTER_BUILD_' ios/Flutter/Generated.xcconfig || true
       - name: Install pods
         script: |
           cd ios && pod install
@@ -34,22 +37,27 @@ workflows:
         script: xcode-project use-profiles
       - name: Flutter build ipa
         script: |
+          BUILD_NAME=$(grep -E '^version:' pubspec.yaml | sed -E 's/^version:[[:space:]]*([^+[:space:]]+).*/\1/')
           echo "Querying App Store Connect for latest build number under Apple ID: $APP_STORE_APPLE_ID"
           LATEST_BUILD=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>&1 || true)
           echo "App Store Connect response: $LATEST_BUILD"
-          if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]] || [ "$LATEST_BUILD" -lt 7 ]; then
-            echo "Latest build is empty, non-numeric, or < 7. Setting base to 7 (Build 7 already uploaded)."
-            LATEST_BUILD=7
+          if ! [[ "$LATEST_BUILD" =~ ^[0-9]+$ ]] || [ "$LATEST_BUILD" -lt 8 ]; then
+            echo "Latest build is empty, non-numeric, or < 8. Setting base to 8."
+            LATEST_BUILD=8
           fi
           BUILD_NUMBER=$((LATEST_BUILD + 1))
           PUBSPEC_BUILD=$(grep -E '^version:' pubspec.yaml | sed -E 's/.*\+([0-9]+).*/\1/' || true)
           if [[ "$PUBSPEC_BUILD" =~ ^[0-9]+$ ]] && [ "$PUBSPEC_BUILD" -gt "$BUILD_NUMBER" ]; then
             BUILD_NUMBER=$PUBSPEC_BUILD
           fi
-          echo "Building iOS IPA with build number: $BUILD_NUMBER"
+          echo "Building iOS IPA with version: $BUILD_NAME ($BUILD_NUMBER)"
           flutter build ipa --release \
+            --build-name="$BUILD_NAME" \
             --build-number="$BUILD_NUMBER" \
             --export-options-plist=/Users/builder/export_options.plist
+          echo "Verifying Info.plist inside built IPA:"
+          unzip -p build/ios/ipa/*.ipa 'Payload/*.app/Info.plist' | plutil -extract CFBundleShortVersionString raw -
+          unzip -p build/ios/ipa/*.ipa 'Payload/*.app/Info.plist' | plutil -extract CFBundleVersion raw -
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
