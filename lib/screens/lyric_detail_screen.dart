@@ -18,6 +18,33 @@ class LyricDetailScreen extends StatefulWidget {
     this.initialIndex,
   });
 
+  /// Sanitizes scraped lyric HTML for full-width LTR rendering in `flutter_html`.
+  ///
+  /// `flutter_html` 3.0.0 parses CSS percentage widths (e.g. `style=width:100%`)
+  /// into `Width(0, Unit.px)` because `ExpressionMapping.expressionToLengthOrPercent`
+  /// does not handle `PercentageTerm`, collapsing the container to 0px width and
+  /// wrapping text one character per line. Stripping inline `style`, `width`, and
+  /// `height` attributes (plus non-content `<script>`, `<style>`, `<iframe>` blocks)
+  /// preserves all lyric text while letting the reader own layout and typography.
+  static String sanitizeLtrHtml(String raw) {
+    var cleaned = raw
+        .replaceAll(RegExp(r'<script[\s\S]*?<\/script>', caseSensitive: false), '')
+        .replaceAll(RegExp(r'<style[\s\S]*?<\/style>', caseSensitive: false), '')
+        .replaceAll(RegExp(r'<iframe[\s\S]*?<\/iframe>', caseSensitive: false), '');
+
+    final attrPattern = RegExp(
+      r'''\s+(?:style|width|height)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)''',
+      caseSensitive: false,
+    );
+
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'<[a-zA-Z][^>]*>'),
+      (match) => match.group(0)!.replaceAll(attrPattern, ''),
+    );
+
+    return cleaned;
+  }
+
   @override
   State<LyricDetailScreen> createState() => _LyricDetailScreenState();
 }
@@ -821,20 +848,59 @@ class _LyricPageViewState extends State<_LyricPageView> {
                   else
                     Padding(
                       padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + s.paraSpacing),
-                      child: Html(
-                        data: _html!,
-                        style: {
-                          'p': Style(
-                            fontSize: FontSize(fontSize),
-                            lineHeight: LineHeight(s.lineHeight),
-                            margin: Margins.only(bottom: s.paraSpacing),
-                            textAlign: TextAlign.left,
-                          ),
-                          'body': Style(
-                            padding: HtmlPaddings.zero,
-                            margin: Margins.zero,
-                          ),
-                        },
+                      child: Directionality(
+                        textDirection: TextDirection.ltr,
+                        child: Html(
+                          data: LyricDetailScreen.sanitizeLtrHtml(_html!),
+                          style: {
+                            'body': Style(
+                              padding: HtmlPaddings.zero,
+                              margin: Margins.zero,
+                              fontSize: FontSize(fontSize),
+                              lineHeight: LineHeight(s.lineHeight),
+                              textAlign: TextAlign.left,
+                            ),
+                            'div': Style(
+                              width: Width.auto(),
+                              height: Height.auto(),
+                              padding: HtmlPaddings.zero,
+                              margin: Margins.zero,
+                            ),
+                            'table': Style(
+                              width: Width.auto(),
+                            ),
+                            'p': Style(
+                              fontSize: FontSize(fontSize),
+                              lineHeight: LineHeight(s.lineHeight),
+                              margin: Margins.only(bottom: s.paraSpacing),
+                              textAlign: TextAlign.left,
+                            ),
+                            'h1': Style(
+                              fontSize: FontSize(fontSize + 4),
+                              lineHeight: LineHeight(s.lineHeight),
+                              margin: Margins.only(bottom: s.paraSpacing + 4),
+                              textAlign: TextAlign.left,
+                            ),
+                            'h2': Style(
+                              fontSize: FontSize(fontSize + 3),
+                              lineHeight: LineHeight(s.lineHeight),
+                              margin: Margins.only(bottom: s.paraSpacing + 4),
+                              textAlign: TextAlign.left,
+                            ),
+                            'h3': Style(
+                              fontSize: FontSize(fontSize + 2),
+                              lineHeight: LineHeight(s.lineHeight),
+                              margin: Margins.only(bottom: s.paraSpacing + 4),
+                              textAlign: TextAlign.left,
+                            ),
+                            'h4': Style(
+                              fontSize: FontSize(fontSize + 1),
+                              lineHeight: LineHeight(s.lineHeight),
+                              margin: Margins.only(bottom: s.paraSpacing + 2),
+                              textAlign: TextAlign.left,
+                            ),
+                          },
+                        ),
                       ),
                     ),
                 ],
