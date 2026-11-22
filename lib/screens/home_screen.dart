@@ -192,27 +192,27 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: const Text('🕯️', style: TextStyle(fontSize: 20)),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'السلام عليك يا أبا عبد الله',
-                      style: TextStyle(
-                        fontFamily: 'serif',
+                      textDirection: TextDirection.rtl,
+                      style: AppTheme.arabicTextStyle(
                         fontSize: 21,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
-                        letterSpacing: 0.5,
                       ),
                     ),
-                    SizedBox(height: 3),
-                    Text(
+                    const SizedBox(height: 3),
+                    const Text(
                       'چراغِ عزا • Comprehensive Offline Shia Recitations',
                       style: TextStyle(
                         fontSize: 11.5,
                         color: Color(0xFFE8F5EC),
                         fontWeight: FontWeight.w400,
+                        letterSpacing: 0,
                       ),
                     ),
                   ],
@@ -538,7 +538,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (urdu != null)
                               Text(
                                 urdu,
-                                style: TextStyle(
+                                textDirection: TextDirection.rtl,
+                                style: AppTheme.arabicTextStyle(
                                   fontSize: 11.5,
                                   color: AppTheme.textSecondary
                                       .withValues(alpha: 0.85),
@@ -690,12 +691,18 @@ class _FeaturedCard extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     urduSubtitle ?? 'Recitation',
+                    textDirection: urduSubtitle != null ? TextDirection.rtl : TextDirection.ltr,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11.5,
-                      color: AppTheme.textSecondary.withValues(alpha: 0.8),
-                    ),
+                    style: urduSubtitle != null
+                        ? AppTheme.arabicTextStyle(
+                            fontSize: 11.5,
+                            color: AppTheme.textSecondary.withValues(alpha: 0.8),
+                          )
+                        : TextStyle(
+                            fontSize: 11.5,
+                            color: AppTheme.textSecondary.withValues(alpha: 0.8),
+                          ),
                   ),
                 ],
               ),

@@ -370,7 +370,8 @@ class _DuaHubScreenState extends State<DuaHubScreen>
               children: [
                 Text(
                   tab.urduTitle,
-                  style: const TextStyle(
+                  textDirection: TextDirection.rtl,
+                  style: AppTheme.arabicTextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                     color: AppTheme.green,

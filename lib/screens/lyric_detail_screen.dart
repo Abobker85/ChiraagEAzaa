@@ -1019,10 +1019,9 @@ class _LyricPageViewState extends State<_LyricPageView> {
               child: Text(
                 block.text,
                 textAlign: TextAlign.right,
-                style: TextStyle(
+                style: AppTheme.arabicTextStyle(
                   fontSize: s.arabicFontSize,
                   height: s.lineHeight + 0.3,
-                  fontFamily: 'NotoSansArabic',
                   color: AppTheme.textPrimary,
                 ),
               ),

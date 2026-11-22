@@ -16,9 +16,32 @@ class AppTheme {
   static const Color goldLight = Color(0xFFFDF6E2);
   static const Color goldBorder = Color(0x33D4AF37);
 
+  static const String arabicFontFamily = 'NotoSansArabic';
+
+  /// Shared text style helper for all Arabic and Urdu script text.
+  ///
+  /// Uses the bundled offline TTF font and enforces `letterSpacing: 0` so
+  /// cursive Arabic/Urdu letters connect cleanly with no inter-letter gaps.
+  static TextStyle arabicTextStyle({
+    double? fontSize,
+    FontWeight? fontWeight,
+    Color? color,
+    double? height,
+  }) {
+    return TextStyle(
+      fontFamily: arabicFontFamily,
+      fontFamilyFallback: const ['NotoEmoji'],
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      height: height,
+      letterSpacing: 0,
+    );
+  }
+
   static ThemeData get light => ThemeData(
     useMaterial3: true,
-    fontFamily: 'NotoSansArabic',
+    fontFamily: arabicFontFamily,
     fontFamilyFallback: const ['NotoEmoji', 'Arial', 'Roboto'],
     colorScheme: ColorScheme.fromSeed(
       seedColor: green,

@@ -164,10 +164,10 @@ class _AppInitializerState extends State<AppInitializer> {
               ),
             ),
             const SizedBox(height: 22),
-            const Text(
+            Text(
               'چراغ عزا',
-              style: TextStyle(
-                fontFamily: 'NotoSansArabic',
+              textDirection: TextDirection.rtl,
+              style: AppTheme.arabicTextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
                 color: AppTheme.gold,

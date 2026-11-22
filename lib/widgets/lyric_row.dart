@@ -48,12 +48,17 @@ class LyricRow extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: TextStyle(
-                          fontSize: titleSize,
-                          fontWeight: FontWeight.w500,
-                          color: AppTheme.textPrimary,
-                          fontFamily: isRtl ? 'NotoNaskhArabic' : null,
-                        ),
+                        style: isRtl
+                            ? AppTheme.arabicTextStyle(
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.textPrimary,
+                              )
+                            : TextStyle(
+                                fontSize: titleSize,
+                                fontWeight: FontWeight.w500,
+                                color: AppTheme.textPrimary,
+                              ),
                         textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
