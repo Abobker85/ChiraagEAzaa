@@ -30,8 +30,11 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Scaffold(
+      backgroundColor: colors.bg,
       appBar: AppBar(
+        backgroundColor: colors.card,
         title: const Text('Search'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(60),
@@ -39,20 +42,22 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: TextField(
               controller: _ctrl,
-              autofocus: true,
+              autofocus: false,
               onChanged: _onChanged,
+              style: TextStyle(color: colors.textPrimary),
               decoration: InputDecoration(
                 hintText: 'Search Nouhay, Marsias, Duas…',
-                hintStyle: const TextStyle(color: AppTheme.textTertiary),
-                filled: true, fillColor: const Color(0xFFEFEFEF),
-                prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
+                hintStyle: TextStyle(color: colors.textTertiary),
+                filled: true,
+                fillColor: colors.inputFill,
+                prefixIcon: Icon(Icons.search_rounded, color: colors.accent),
                 suffixIcon: _ctrl.text.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear, size: 18),
+                        icon: Icon(Icons.clear_rounded, size: 18, color: colors.textSecondary),
                         onPressed: () { _ctrl.clear(); setState(() => _results = []); })
                     : null,
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                   borderSide: BorderSide.none,
                 ),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -62,21 +67,22 @@ class _SearchScreenState extends State<SearchScreen> {
         ),
       ),
       body: _ctrl.text.isEmpty
-          ? const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Text('🔍', style: TextStyle(fontSize: 48)),
-              SizedBox(height: 12),
+          ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              const Text('🔍', style: TextStyle(fontSize: 48)),
+              const SizedBox(height: 12),
               Text('Search across 5,130 items',
-                  style: TextStyle(color: AppTheme.textSecondary, fontSize: 15)),
+                  style: TextStyle(color: colors.textSecondary, fontSize: 15)),
             ]))
           : _searching
-              ? const Center(child: CircularProgressIndicator(color: AppTheme.green))
+              ? Center(child: CircularProgressIndicator(color: colors.accent))
               : _results.isEmpty
                   ? Center(child: Text('No results for "${_ctrl.text}"',
-                      style: const TextStyle(color: AppTheme.textSecondary)))
+                      style: TextStyle(color: colors.textSecondary)))
                   : ListView.separated(
+                      padding: const EdgeInsets.only(bottom: 110),
                       itemCount: _results.length,
-                      separatorBuilder: (_, __) => const Divider(
-                          height: 1, thickness: 0.5, indent: 16, color: AppTheme.separator),
+                      separatorBuilder: (_, __) => Divider(
+                          height: 1, thickness: 0.5, indent: 16, color: colors.separator),
                       itemBuilder: (ctx, i) {
                         final item = _results[i];
                         return LyricRow(

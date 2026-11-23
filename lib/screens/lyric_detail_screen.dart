@@ -167,15 +167,18 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (ctx) {
         return AnimatedBuilder(
           animation: AppSettings.instance,
           builder: (context, _) {
             final s = AppSettings.instance;
+            final colors = AppColors.of(context);
             return Container(
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              decoration: BoxDecoration(
+                color: colors.card,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                border: Border(top: BorderSide(color: colors.separator)),
               ),
               padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
               child: SafeArea(
@@ -188,33 +191,80 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
                         width: 36,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: Colors.black12,
+                          color: colors.separator,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                     ),
                     const SizedBox(height: 14),
-                    const Text(
-                      'Reading & Typography Settings',
+                    Text(
+                      'Reading & Typography',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                        color: colors.textPrimary,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 18),
-                    // Arabic Font Size
+                    const SizedBox(height: 16),
+                    // Reading Surface Selector (Paper / Light / Dark)
+                    SegmentedButton<String>(
+                      segments: const [
+                        ButtonSegment(value: 'paper', label: Text('Paper')),
+                        ButtonSegment(value: 'light', label: Text('Light')),
+                        ButtonSegment(value: 'dark', label: Text('Night')),
+                      ],
+                      selected: {s.readerSurface},
+                      onSelectionChanged: (sel) {
+                        s.readerSurface = sel.first;
+                        s.save();
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // Roman / English Font Size
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
+                          'Roman / English Size',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13.5,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          '${s.ltrFontSize.toInt()} pt',
+                          style: TextStyle(color: colors.accent, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    Slider(
+                      value: s.ltrFontSize.clamp(14.0, 26.0),
+                      min: 14,
+                      max: 26,
+                      divisions: 12,
+                      activeColor: colors.accent,
+                      onChanged: (v) {
+                        s.ltrFontSize = v;
+                        s.save();
+                      },
+                    ),
+                    // Arabic Calligraphy Size
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
                           'Arabic Calligraphy Size',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13.5,
+                            color: colors.textPrimary,
+                          ),
                         ),
                         Text(
                           '${s.arabicFontSize.toInt()} pt',
-                          style: const TextStyle(color: AppTheme.green, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: colors.accent, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -223,24 +273,27 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
                       min: 28,
                       max: 70,
                       divisions: 21,
-                      activeColor: AppTheme.green,
+                      activeColor: colors.accent,
                       onChanged: (v) {
                         s.arabicFontSize = v;
                         s.save();
                       },
                     ),
-                    const SizedBox(height: 8),
                     // Line Spacing
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
+                        Text(
                           'Line Height (التباعد)',
-                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13.5,
+                            color: colors.textPrimary,
+                          ),
                         ),
                         Text(
                           s.lineHeight.toStringAsFixed(1),
-                          style: const TextStyle(color: AppTheme.green, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: colors.accent, fontWeight: FontWeight.bold),
                         ),
                       ],
                     ),
@@ -249,20 +302,20 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
                       min: 1.4,
                       max: 2.8,
                       divisions: 14,
-                      activeColor: AppTheme.green,
+                      activeColor: colors.accent,
                       onChanged: (v) {
                         s.lineHeight = v;
                         s.save();
                       },
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 10),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.greenPale,
-                        foregroundColor: AppTheme.green,
+                        backgroundColor: colors.accentSoft,
+                        foregroundColor: colors.accent,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       onPressed: () => Navigator.pop(ctx),
@@ -475,86 +528,104 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
   Widget build(BuildContext context) {
     final hasMultiple = _playlist.length > 1;
     final isSaved = SavedManager.instance.isSaved(_currentItem.id);
+    final colors = AppColors.of(context);
 
-    return Scaffold(
-      backgroundColor: _isCurrentRtl ? const Color(0xFFFAF8F3) : AppTheme.bg,
-      appBar: AppBar(
-        backgroundColor: AppTheme.card,
-        scrolledUnderElevation: 0,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Column(
-          children: [
-            Text(
-              _currentItem.title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textDirection: AppTheme.containsArabic(_currentItem.title)
-                  ? TextDirection.rtl
-                  : TextDirection.ltr,
-              style: AppTheme.containsArabic(_currentItem.title)
-                  ? AppTheme.arabicTextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
-                    )
-                  : const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+    return AnimatedBuilder(
+      animation: AppSettings.instance,
+      builder: (context, _) {
+        final surface = AppSettings.instance.readerSurface;
+        final isDarkTheme = Theme.of(context).brightness == Brightness.dark;
+        final readerBg = surface == 'dark'
+            ? const Color(0xFF141815)
+            : surface == 'light'
+                ? (isDarkTheme ? colors.bg : Colors.white)
+                : (_isCurrentRtl ? colors.paperBg : colors.bg);
+
+        return Scaffold(
+          backgroundColor: readerBg,
+          appBar: AppBar(
+            backgroundColor: colors.card,
+            scrolledUnderElevation: 0,
+            elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+              onPressed: () => Navigator.pop(context),
             ),
-            if (hasMultiple)
-              Text(
-                '${_currentIndex + 1} of ${_playlist.length}',
-                style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary),
+            title: Column(
+              children: [
+                Text(
+                  _currentItem.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textDirection: AppTheme.containsArabic(_currentItem.title)
+                      ? TextDirection.rtl
+                      : TextDirection.ltr,
+                  style: AppTheme.containsArabic(_currentItem.title)
+                      ? AppTheme.arabicTextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        )
+                      : TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        ),
+                ),
+                if (hasMultiple)
+                  Text(
+                    '${_currentIndex + 1} of ${_playlist.length}',
+                    style: TextStyle(fontSize: 11, color: colors.textSecondary),
+                  ),
+              ],
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.format_size_rounded, size: 21),
+                tooltip: 'Text Size',
+                onPressed: _showFontSettingsSheet,
               ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.format_size_rounded, size: 21),
-            tooltip: 'Text Size',
-            onPressed: _showFontSettingsSheet,
+              IconButton(
+                icon: Icon(
+                  isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+                  color: isSaved ? colors.accent : null,
+                  size: 22,
+                ),
+                tooltip: 'Bookmark',
+                onPressed: _toggleSave,
+              ),
+              IconButton(
+                icon: const Icon(Icons.copy_rounded, size: 19),
+                tooltip: 'Copy Text',
+                onPressed: () => _copy(_contentCache[_currentItem.id]),
+              ),
+            ],
           ),
-          IconButton(
-            icon: Icon(
-              isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-              color: isSaved ? AppTheme.green : null,
-              size: 22,
-            ),
-            tooltip: 'Bookmark',
-            onPressed: _toggleSave,
-          ),
-          IconButton(
-            icon: const Icon(Icons.copy_rounded, size: 19),
-            tooltip: 'Copy Text',
-            onPressed: () => _copy(_contentCache[_currentItem.id]),
-          ),
-        ],
-      ),
-      body: PageView.builder(
-        controller: _pageController,
-        itemCount: _playlist.length,
-        onPageChanged: (idx) {
-          setState(() {
-            _currentIndex = idx;
-          });
-        },
-        itemBuilder: (context, index) {
-          final item = _playlist[index];
-          return _LyricPageView(
-            item: item,
-            onContentLoaded: (html) {
-              _contentCache[item.id] = html;
+          body: PageView.builder(
+            controller: _pageController,
+            itemCount: _playlist.length,
+            onPageChanged: (idx) {
+              setState(() {
+                _currentIndex = idx;
+              });
             },
-          );
-        },
-      ),
-      bottomNavigationBar: hasMultiple ? _buildBottomNavigationBar() : null,
+            itemBuilder: (context, index) {
+              final item = _playlist[index];
+              return _LyricPageView(
+                item: item,
+                onContentLoaded: (html) {
+                  _contentCache[item.id] = html;
+                },
+              );
+            },
+          ),
+          bottomNavigationBar: hasMultiple ? _buildBottomNavigationBar(colors) : null,
+        );
+      },
     );
   }
 
-  Widget _buildBottomNavigationBar() {
+  Widget _buildBottomNavigationBar(AppColors colors) {
     final isFirst = _currentIndex == 0;
     final isLast = _currentIndex >= _playlist.length - 1;
 
@@ -563,20 +634,13 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
       child: Container(
         height: 56,
         decoration: BoxDecoration(
-          color: AppTheme.card,
+          color: colors.card,
           border: Border(
             top: BorderSide(
-              color: Colors.black.withValues(alpha: 0.08),
+              color: colors.separator,
               width: 0.8,
             ),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 6,
-              offset: const Offset(0, -2),
-            ),
-          ],
         ),
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: Row(
@@ -600,7 +664,7 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
                     Icon(
                       Icons.arrow_back_ios_rounded,
                       size: 14,
-                      color: isFirst ? AppTheme.textTertiary : AppTheme.green,
+                      color: isFirst ? colors.textTertiary : colors.accent,
                     ),
                     const SizedBox(width: 4),
                     Text(
@@ -608,7 +672,7 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: isFirst ? AppTheme.textTertiary : AppTheme.green,
+                        color: isFirst ? colors.textTertiary : colors.accent,
                       ),
                     ),
                   ],
@@ -617,7 +681,7 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
             ),
             // Center Index button (tappable to open table of recitations)
             Material(
-              color: AppTheme.greenPale,
+              color: colors.accentSoft,
               borderRadius: BorderRadius.circular(16),
               child: InkWell(
                 borderRadius: BorderRadius.circular(16),
@@ -627,25 +691,25 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.format_list_bulleted_rounded,
                         size: 15,
-                        color: AppTheme.green,
+                        color: colors.accent,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         '${_currentIndex + 1} / ${_playlist.length}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.green,
+                          color: colors.accent,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      const Icon(
+                      Icon(
                         Icons.keyboard_arrow_up_rounded,
                         size: 16,
-                        color: AppTheme.green,
+                        color: colors.accent,
                       ),
                     ],
                   ),
@@ -672,14 +736,14 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: isLast ? AppTheme.textTertiary : AppTheme.green,
+                        color: isLast ? colors.textTertiary : colors.accent,
                       ),
                     ),
                     const SizedBox(width: 4),
                     Icon(
                       Icons.arrow_forward_ios_rounded,
                       size: 14,
-                      color: isLast ? AppTheme.textTertiary : AppTheme.green,
+                      color: isLast ? colors.textTertiary : colors.accent,
                     ),
                   ],
                 ),
@@ -853,16 +917,20 @@ class _LyricPageViewState extends State<_LyricPageView> {
           animation: AppSettings.instance,
           builder: (context, _) {
             final s = AppSettings.instance;
+            final colors = AppColors.of(context);
+            final isNight = s.readerSurface == 'dark' ||
+                (s.readerSurface != 'light' && Theme.of(context).brightness == Brightness.dark);
+            final readerTextColor = isNight ? const Color(0xFFF2F5F3) : AppTheme.textPrimary;
             final fontSize = _isRtl ? s.rtlFontSize : s.ltrFontSize;
 
             return SingleChildScrollView(
               controller: _scrollController,
-              padding: const EdgeInsets.only(bottom: 40),
+              padding: const EdgeInsets.only(bottom: 64),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (_isRtl)
-                    ..._buildParsedBlocks(s)
+                    ..._buildParsedBlocks(s, readerTextColor, colors)
                   else
                     Padding(
                       padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + s.paraSpacing),
@@ -874,6 +942,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                             'body': Style(
                               padding: HtmlPaddings.zero,
                               margin: Margins.zero,
+                              color: readerTextColor,
                               fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize),
@@ -885,10 +954,12 @@ class _LyricPageViewState extends State<_LyricPageView> {
                               height: Height.auto(),
                               padding: HtmlPaddings.zero,
                               margin: Margins.zero,
+                              color: readerTextColor,
                               fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                             ),
                             '#urduTextPath': Style(
+                              color: readerTextColor,
                               fontFamily: AppTheme.arabicFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize + 4),
@@ -900,16 +971,19 @@ class _LyricPageViewState extends State<_LyricPageView> {
                               width: Width.auto(),
                             ),
                             'span': Style(
+                              color: readerTextColor,
                               fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                             ),
                             'li': Style(
+                              color: readerTextColor,
                               fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize),
                               lineHeight: LineHeight(s.lineHeight),
                             ),
                             'p': Style(
+                              color: readerTextColor,
                               fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize),
@@ -918,6 +992,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                               textAlign: TextAlign.left,
                             ),
                             'h1': Style(
+                              color: readerTextColor,
                               fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize + 4),
@@ -926,6 +1001,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                               textAlign: TextAlign.left,
                             ),
                             'h2': Style(
+                              color: readerTextColor,
                               fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize + 3),
@@ -934,6 +1010,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                               textAlign: TextAlign.left,
                             ),
                             'h3': Style(
+                              color: readerTextColor,
                               fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize + 2),
@@ -942,6 +1019,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                               textAlign: TextAlign.left,
                             ),
                             'h4': Style(
+                              color: readerTextColor,
                               fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize + 1),
@@ -979,7 +1057,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
     );
   }
 
-  List<Widget> _buildParsedBlocks(AppSettings s) {
+  List<Widget> _buildParsedBlocks(AppSettings s, Color textColor, AppColors colors) {
     if (_blocks.isEmpty) {
       if (_html == null) return [];
       final clean = _cleanHtmlEntities(_html!.replaceAll(RegExp(r'<[^>]+>'), '')).trim();
@@ -996,9 +1074,9 @@ class _LyricPageViewState extends State<_LyricPageView> {
                   ? AppTheme.arabicTextStyle(
                       fontSize: s.arabicFontSize,
                       height: s.lineHeight + 0.3,
-                      color: AppTheme.textPrimary,
+                      color: textColor,
                     )
-                  : TextStyle(fontSize: s.ltrFontSize),
+                  : TextStyle(fontSize: s.ltrFontSize, color: textColor),
             ),
           ),
         ),
@@ -1015,17 +1093,17 @@ class _LyricPageViewState extends State<_LyricPageView> {
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppTheme.greenPale.withValues(alpha: 0.35),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppTheme.green.withValues(alpha: 0.2)),
+              color: colors.accentSoft.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: colors.accent.withValues(alpha: 0.25)),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
+                Icon(
                   Icons.info_outline_rounded,
                   size: 18,
-                  color: AppTheme.green,
+                  color: colors.accent,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1037,7 +1115,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                       style: TextStyle(
                         fontSize: s.ltrFontSize.clamp(13.0, 16.0),
                         height: 1.5,
-                        color: AppTheme.textPrimary.withValues(alpha: 0.88),
+                        color: textColor.withValues(alpha: 0.88),
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -1062,7 +1140,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                   fontSize: isTitle ? s.ltrFontSize + 3 : s.ltrFontSize,
                   fontWeight: isTitle ? FontWeight.bold : FontWeight.w500,
                   height: s.lineHeight,
-                  color: isTitle ? AppTheme.green : AppTheme.textPrimary,
+                  color: isTitle ? colors.accent : textColor,
                 ),
               ),
             ),
@@ -1086,7 +1164,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                 style: AppTheme.arabicTextStyle(
                   fontSize: s.arabicFontSize,
                   height: s.lineHeight + 0.3,
-                  color: AppTheme.textPrimary,
+                  color: textColor,
                 ),
               ),
             ),

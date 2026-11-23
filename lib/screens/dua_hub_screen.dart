@@ -113,11 +113,12 @@ class _DuaHubScreenState extends State<DuaHubScreen>
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Scaffold(
-      backgroundColor: AppTheme.bg,
+      backgroundColor: colors.bg,
       appBar: AppBar(
         scrolledUnderElevation: 0,
-        backgroundColor: AppTheme.card,
+        backgroundColor: colors.card,
         elevation: 0,
         leading: Navigator.canPop(context)
             ? IconButton(
@@ -125,12 +126,12 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                 onPressed: () => Navigator.pop(context),
               )
             : null,
-        title: const Text(
+        title: Text(
           'Dua & Spiritual Portal',
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
-            color: AppTheme.textPrimary,
+            color: colors.textPrimary,
           ),
         ),
         actions: [
@@ -150,30 +151,28 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                 child: Container(
                   height: 40,
                   decoration: BoxDecoration(
-                    color: AppTheme.bg,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: Colors.black.withValues(alpha: 0.08),
-                    ),
+                    color: colors.inputFill,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: colors.separator),
                   ),
                   child: TextField(
                     controller: _searchController,
                     onChanged: (val) => setState(() => _searchQuery = val),
-                    style: const TextStyle(fontSize: 13.5),
+                    style: TextStyle(fontSize: 13.5, color: colors.textPrimary),
                     decoration: InputDecoration(
                       hintText: 'Search recitations in current tab...',
-                      hintStyle: const TextStyle(
+                      hintStyle: TextStyle(
                         fontSize: 13,
-                        color: AppTheme.textTertiary,
+                        color: colors.textTertiary,
                       ),
-                      prefixIcon: const Icon(
+                      prefixIcon: Icon(
                         Icons.search_rounded,
                         size: 18,
-                        color: AppTheme.green,
+                        color: colors.accent,
                       ),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
-                              icon: const Icon(Icons.clear, size: 16),
+                              icon: Icon(Icons.clear, size: 16, color: colors.textSecondary),
                               onPressed: () {
                                 _searchController.clear();
                                 setState(() => _searchQuery = '');
@@ -192,28 +191,26 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                 height: 44,
                 decoration: BoxDecoration(
-                  color: AppTheme.bg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.black.withValues(alpha: 0.06),
-                  ),
+                  color: colors.inputFill,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: colors.separator),
                 ),
                 child: TabBar(
                   controller: _tabController,
                   indicatorSize: TabBarIndicatorSize.tab,
                   indicator: BoxDecoration(
-                    color: AppTheme.green,
-                    borderRadius: BorderRadius.circular(10),
+                    color: colors.accent,
+                    borderRadius: BorderRadius.circular(11),
                     boxShadow: [
                       BoxShadow(
-                        color: AppTheme.green.withValues(alpha: 0.25),
+                        color: colors.accent.withValues(alpha: 0.25),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   labelColor: Colors.white,
-                  unselectedLabelColor: AppTheme.textSecondary,
+                  unselectedLabelColor: colors.textSecondary,
                   labelStyle: const TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
@@ -241,7 +238,7 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                               decoration: BoxDecoration(
                                 color: _tabs[_tabController.index].key == tab.key
                                     ? Colors.white.withValues(alpha: 0.25)
-                                    : AppTheme.greenPale,
+                                    : colors.accentSoft,
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Text(
@@ -251,7 +248,7 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                                   fontWeight: FontWeight.w700,
                                   color: _tabs[_tabController.index].key == tab.key
                                       ? Colors.white
-                                      : AppTheme.green,
+                                      : colors.accent,
                                 ),
                               ),
                             ),
@@ -268,17 +265,17 @@ class _DuaHubScreenState extends State<DuaHubScreen>
         ),
       ),
       body: _loading
-          ? const Center(
-              child: CircularProgressIndicator(color: AppTheme.green),
+          ? Center(
+              child: CircularProgressIndicator(color: colors.accent),
             )
           : TabBarView(
               controller: _tabController,
-              children: _tabs.map((tab) => _buildTabList(tab)).toList(),
+              children: _tabs.map((tab) => _buildTabList(tab, colors)).toList(),
             ),
     );
   }
 
-  Widget _buildTabList(_DuaTabDefinition tab) {
+  Widget _buildTabList(_DuaTabDefinition tab, AppColors colors) {
     final items = _filteredItems(tab.key);
     final allItems = _cache[tab.key] ?? [];
 
@@ -292,7 +289,7 @@ class _DuaHubScreenState extends State<DuaHubScreen>
               Icon(
                 tab.iconData,
                 size: 48,
-                color: AppTheme.textTertiary,
+                color: colors.textTertiary,
               ),
               const SizedBox(height: 12),
               Text(
@@ -300,8 +297,8 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                     ? 'No matches found for "$_searchQuery"'
                     : 'No recitations available in this section',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                  color: AppTheme.textSecondary,
+                style: TextStyle(
+                  color: colors.textSecondary,
                   fontSize: 14,
                 ),
               ),
@@ -312,20 +309,21 @@ class _DuaHubScreenState extends State<DuaHubScreen>
     }
 
     return RefreshIndicator(
-      color: AppTheme.green,
+      color: colors.accent,
       onRefresh: _loadAllCategories,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
         itemCount: items.length + 1, // +1 for header info card
         itemBuilder: (context, index) {
           if (index == 0) {
-            return _buildHeaderInfoCard(tab, allItems.length);
+            return _buildHeaderInfoCard(tab, allItems.length, colors);
           }
           final item = items[index - 1];
           final origIndex = allItems.indexOf(item);
           final safeIndex = origIndex >= 0 ? origIndex : index - 1;
 
           return _buildRecitationCard(
+            colors: colors,
             item: item,
             playlist: allItems,
             index: safeIndex,
@@ -336,15 +334,15 @@ class _DuaHubScreenState extends State<DuaHubScreen>
     );
   }
 
-  Widget _buildHeaderInfoCard(_DuaTabDefinition tab, int count) {
+  Widget _buildHeaderInfoCard(_DuaTabDefinition tab, int count, AppColors colors) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: AppTheme.greenPale.withValues(alpha: 0.65),
-        borderRadius: BorderRadius.circular(12),
+        color: colors.accentSoft,
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: AppTheme.greenBadge.withValues(alpha: 0.8),
+          color: colors.accentBadge,
         ),
       ),
       child: Row(
@@ -353,14 +351,14 @@ class _DuaHubScreenState extends State<DuaHubScreen>
             width: 34,
             height: 34,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
+              color: colors.card,
+              borderRadius: BorderRadius.circular(9),
               border: Border.all(
-                color: AppTheme.gold.withValues(alpha: 0.3),
+                color: colors.gold.withValues(alpha: 0.3),
               ),
             ),
             child: Center(
-              child: Icon(tab.iconData, size: 18, color: AppTheme.green),
+              child: Icon(tab.iconData, size: 18, color: colors.accent),
             ),
           ),
           const SizedBox(width: 12),
@@ -372,16 +370,16 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                   tab.urduTitle,
                   textDirection: TextDirection.rtl,
                   style: AppTheme.arabicTextStyle(
-                    fontSize: 14,
+                    fontSize: 17,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.green,
+                    color: colors.accent,
                   ),
                 ),
                 Text(
                   'Swipe between pages while reading • $count recitations',
                   style: TextStyle(
                     fontSize: 11,
-                    color: AppTheme.textSecondary.withValues(alpha: 0.9),
+                    color: colors.textSecondary,
                   ),
                 ),
               ],
@@ -393,6 +391,7 @@ class _DuaHubScreenState extends State<DuaHubScreen>
   }
 
   Widget _buildRecitationCard({
+    required AppColors colors,
     required LyricItem item,
     required List<LyricItem> playlist,
     required int index,
@@ -403,23 +402,14 @@ class _DuaHubScreenState extends State<DuaHubScreen>
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: AppTheme.card,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Colors.black.withValues(alpha: 0.06),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        color: colors.card,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colors.separator),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
           onTap: () async {
             await Navigator.push(
               context,
@@ -441,19 +431,17 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                   width: 32,
                   height: 32,
                   decoration: BoxDecoration(
-                    color: AppTheme.bg,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: Colors.black.withValues(alpha: 0.05),
-                    ),
+                    color: colors.bg,
+                    borderRadius: BorderRadius.circular(9),
+                    border: Border.all(color: colors.separator),
                   ),
                   child: Center(
                     child: Text(
                       '${index + 1}',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
-                        color: AppTheme.textSecondary,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ),
@@ -470,23 +458,23 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                             : TextDirection.ltr,
                         style: AppTheme.containsArabic(item.title)
                             ? AppTheme.arabicTextStyle(
-                                fontSize: 15,
+                                fontSize: 17,
                                 fontWeight: FontWeight.w600,
-                                color: AppTheme.textPrimary,
+                                color: colors.textPrimary,
                               )
-                            : const TextStyle(
+                            : TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: AppTheme.textPrimary,
+                                color: colors.textPrimary,
                               ),
                       ),
                       if (item.subtitle.isNotEmpty) ...[
                         const SizedBox(height: 2),
                         Text(
                           item.subtitle,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 12,
-                            color: AppTheme.textSecondary,
+                            color: colors.textSecondary,
                           ),
                         ),
                       ],
@@ -494,17 +482,17 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                   ),
                 ),
                 if (isSaved)
-                  const Padding(
-                    padding: EdgeInsets.only(right: 6),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
                     child: Icon(
                       Icons.bookmark_rounded,
-                      color: AppTheme.green,
+                      color: colors.accent,
                       size: 18,
                     ),
                   ),
-                const Icon(
+                Icon(
                   Icons.arrow_forward_ios_rounded,
-                  color: AppTheme.textTertiary,
+                  color: colors.textTertiary,
                   size: 14,
                 ),
               ],

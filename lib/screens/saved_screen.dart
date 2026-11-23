@@ -29,25 +29,31 @@ class _SavedScreenState extends State<SavedScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Saved')),
+      backgroundColor: colors.bg,
+      appBar: AppBar(
+        backgroundColor: colors.card,
+        title: const Text('Saved'),
+      ),
       body: _items == null
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.green))
+          ? Center(child: CircularProgressIndicator(color: colors.accent))
           : _items!.isEmpty
-              ? const Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                  Text('🔖', style: TextStyle(fontSize: 48)),
-                  SizedBox(height: 12),
+              ? Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                  const Text('🔖', style: TextStyle(fontSize: 48)),
+                  const SizedBox(height: 12),
                   Text('No bookmarks yet',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-                  SizedBox(height: 4),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: colors.textPrimary)),
+                  const SizedBox(height: 4),
                   Text('Tap the bookmark icon on any lyric to save it',
-                      style: TextStyle(fontSize: 13, color: AppTheme.textSecondary),
+                      style: TextStyle(fontSize: 13, color: colors.textSecondary),
                       textAlign: TextAlign.center),
                 ]))
               : ListView.separated(
+                  padding: const EdgeInsets.only(bottom: 110),
                   itemCount: _items!.length,
-                  separatorBuilder: (_, __) => const Divider(
-                      height: 1, thickness: 0.5, indent: 16, color: AppTheme.separator),
+                  separatorBuilder: (_, __) => Divider(
+                      height: 1, thickness: 0.5, indent: 16, color: colors.separator),
                   itemBuilder: (ctx, i) {
                     final item = _items![i];
                     return LyricRow(
@@ -65,7 +71,7 @@ class _SavedScreenState extends State<SavedScreen> {
                         _load(); // refresh if user removed bookmark inside
                       },
                       trailing: IconButton(
-                        icon: const Icon(Icons.bookmark, color: AppTheme.green, size: 20),
+                        icon: Icon(Icons.bookmark_rounded, color: colors.accent, size: 20),
                         onPressed: () => _remove(item),
                       ),
                     );

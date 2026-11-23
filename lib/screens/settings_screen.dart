@@ -82,55 +82,112 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
+      backgroundColor: colors.bg,
+      appBar: AppBar(
+        backgroundColor: colors.card,
+        title: const Text('Settings'),
+      ),
       body: AnimatedBuilder(
         animation: _s,
         builder: (context, _) => ListView(
-          padding: const EdgeInsets.symmetric(vertical: 12),
+          padding: const EdgeInsets.fromLTRB(0, 12, 0, 110),
           children: [
-            _sectionHeader('Font Size'),
-            _settingsCard([
+            _sectionHeader('Appearance', colors),
+            _settingsCard(colors, [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Theme',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      child: SegmentedButton<ThemeMode>(
+                        segments: const [
+                          ButtonSegment(
+                            value: ThemeMode.system,
+                            label: Text('System'),
+                            icon: Icon(Icons.brightness_auto_rounded, size: 16),
+                          ),
+                          ButtonSegment(
+                            value: ThemeMode.light,
+                            label: Text('Light'),
+                            icon: Icon(Icons.light_mode_rounded, size: 16),
+                          ),
+                          ButtonSegment(
+                            value: ThemeMode.dark,
+                            label: Text('Dark'),
+                            icon: Icon(Icons.dark_mode_rounded, size: 16),
+                          ),
+                        ],
+                        selected: {_s.themeMode},
+                        onSelectionChanged: (sel) {
+                          _s.themeMode = sel.first;
+                          _s.save();
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ]),
+            _sectionHeader('Font Size', colors),
+            _settingsCard(colors, [
               _sliderRow(
+                colors: colors,
                 label: 'Roman / English',
                 sub: 'Nouhay · Marsias · Salaam',
-                value: _s.ltrFontSize,
+                value: _s.ltrFontSize.clamp(14.0, 26.0),
                 min: 14, max: 26,
                 display: '${_s.ltrFontSize.round()}px',
                 onChanged: (v) { _s.ltrFontSize = v; _s.save(); },
               ),
-              const Divider(height: 1, thickness: 0.5, color: AppTheme.separator),
+              Divider(height: 1, thickness: 0.5, color: colors.separator),
               _sliderRow(
+                colors: colors,
                 label: 'Urdu',
                 sub: 'Urdu Marsiye · Translations',
-                value: _s.rtlFontSize,
+                value: _s.rtlFontSize.clamp(28.0, 56.0),
                 min: 28, max: 56,
                 display: '${_s.rtlFontSize.round()}px',
                 onChanged: (v) { _s.rtlFontSize = v; _s.save(); },
               ),
-              const Divider(height: 1, thickness: 0.5, color: AppTheme.separator),
+              Divider(height: 1, thickness: 0.5, color: colors.separator),
               _sliderRow(
+                colors: colors,
                 label: 'Arabic',
                 sub: 'Duas · Ziyaraat · Arabic text',
-                value: _s.arabicFontSize,
+                value: _s.arabicFontSize.clamp(32.0, 72.0),
                 min: 32, max: 72,
                 display: '${_s.arabicFontSize.round()}px',
                 onChanged: (v) { _s.arabicFontSize = v; _s.save(); },
               ),
             ]),
-            _sectionHeader('Spacing'),
-            _settingsCard([
+            _sectionHeader('Spacing', colors),
+            _settingsCard(colors, [
               _sliderRow(
+                colors: colors,
                 label: 'Paragraph spacing',
-                value: _s.paraSpacing,
+                value: _s.paraSpacing.clamp(0.0, 48.0),
                 min: 0, max: 48,
                 display: '${_s.paraSpacing.round()}px',
                 onChanged: (v) { _s.paraSpacing = v; _s.save(); },
               ),
-              const Divider(height: 1, thickness: 0.5, color: AppTheme.separator),
+              Divider(height: 1, thickness: 0.5, color: colors.separator),
               _sliderRow(
+                colors: colors,
                 label: 'Line height',
-                value: _s.lineHeight,
+                value: _s.lineHeight.clamp(1.3, 2.5),
                 min: 1.3, max: 2.5,
                 divisions: 12,
                 display: _s.lineHeight.toStringAsFixed(1),
@@ -140,8 +197,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
             ]),
-            _sectionHeader('General'),
-            _settingsCard([
+            _sectionHeader('General', colors),
+            _settingsCard(colors, [
               ListTile(
                 title: const Text(
                   'Reset to defaults',
@@ -154,9 +211,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
             ]),
-            _sectionHeader('About'),
-            _settingsCard([
+            _sectionHeader('About', colors),
+            _settingsCard(colors, [
               _infoRow(
+                colors,
                 'Chiraag e Azaa',
                 'Version 1.0',
                 leading: ClipRRect(
@@ -168,51 +226,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     fit: BoxFit.cover,
                   ),
                 ),
-                trailing: const Text('v1.0', style: TextStyle(color: AppTheme.textSecondary)),
+                trailing: Text('v1.0', style: TextStyle(color: colors.textSecondary)),
               ),
-              const Divider(height: 1, thickness: 0.5, color: AppTheme.separator),
-              _infoRow('Total Lyrics', 'Nouhay, Marsias, Duas & more', trailing: const Text('5,128', style: TextStyle(color: AppTheme.textSecondary))),
-              const Divider(height: 1, thickness: 0.5, color: AppTheme.separator),
-              _infoRow('Offline Mode', 'Works without internet', trailing: const Text('✅', style: TextStyle(fontSize: 20))),
+              Divider(height: 1, thickness: 0.5, color: colors.separator),
+              _infoRow(colors, 'Total Lyrics', 'Nouhay, Marsias, Duas & more', trailing: Text('5,128', style: TextStyle(color: colors.textSecondary))),
+              Divider(height: 1, thickness: 0.5, color: colors.separator),
+              _infoRow(colors, 'Offline Mode', 'Works without internet', trailing: const Text('✅', style: TextStyle(fontSize: 20))),
             ]),
-            _sectionHeader('Notifications & Reminders'),
-            _settingsCard([
-              _dailyReminderTile(),
-              const Divider(height: 1, thickness: 0.5, color: AppTheme.separator),
-              _testNotificationTile(),
-              const Divider(height: 1, thickness: 0.5, color: AppTheme.separator),
-              _pushRow(),
+            _sectionHeader('Notifications & Reminders', colors),
+            _settingsCard(colors, [
+              _dailyReminderTile(colors),
+              Divider(height: 1, thickness: 0.5, color: colors.separator),
+              _testNotificationTile(colors),
+              Divider(height: 1, thickness: 0.5, color: colors.separator),
+              _pushRow(colors),
             ]),
-            _sectionHeader('Credits'),
-            _settingsCard([
-              _infoRow('Designed & Developed by', 'Mir Ali', trailing: const Text('💚', style: TextStyle(fontSize: 20))),
-              const Divider(height: 1, thickness: 0.5, color: AppTheme.separator),
-              const ListTile(
-                title: Text('Email'),
-                subtitle: Text('gisdevpr31@gmail.com', style: TextStyle(color: AppTheme.textSecondary)),
-                trailing: Text('✉️', style: TextStyle(fontSize: 18)),
+            _sectionHeader('Credits', colors),
+            _settingsCard(colors, [
+              _infoRow(colors, 'Designed & Developed by', 'Mir Ali', trailing: const Text('💚', style: TextStyle(fontSize: 20))),
+              Divider(height: 1, thickness: 0.5, color: colors.separator),
+              ListTile(
+                title: Text('Email', style: TextStyle(color: colors.textPrimary)),
+                subtitle: Text('gisdevpr31@gmail.com', style: TextStyle(color: colors.textSecondary)),
+                trailing: const Text('✉️', style: TextStyle(fontSize: 18)),
               ),
             ]),
-            _sectionHeader('Request'),
-            _settingsCard(const [
+            _sectionHeader('Request', colors),
+            _settingsCard(colors, const [
               ParentsMemorialCard(),
             ]),
-            const SizedBox(height: 32),
+            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
 
-  Widget _pushRow() {
+  Widget _pushRow(AppColors colors) {
     if (kIsWeb) {
-      return const ListTile(
-        title: Text('Push Notifications'),
+      return ListTile(
+        title: Text('Push Notifications', style: TextStyle(color: colors.textPrimary)),
         subtitle: Text(
           'Available in Android and iOS builds',
-          style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+          style: TextStyle(color: colors.textSecondary, fontSize: 12),
         ),
-        trailing: Icon(Icons.notifications_off_outlined, color: AppTheme.textTertiary),
+        trailing: Icon(Icons.notifications_off_outlined, color: colors.textTertiary),
       );
     }
 
@@ -225,8 +283,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ? 'Blocked — enable in device settings'
             : 'Tap to enable';
     return ListTile(
-      title: const Text('Push Notifications'),
-      subtitle: Text(sub, style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12)),
+      title: Text('Push Notifications', style: TextStyle(color: colors.textPrimary)),
+      subtitle: Text(sub, style: TextStyle(color: colors.textSecondary, fontSize: 12)),
       trailing: _pushStatus == null
           ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
           : Text(icon, style: const TextStyle(fontSize: 20)),
@@ -234,17 +292,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _dailyReminderTile() {
+  Widget _dailyReminderTile(AppColors colors) {
     if (kIsWeb) return const SizedBox.shrink();
     return SwitchListTile(
-      secondary: const Icon(Icons.alarm_on_rounded, color: AppTheme.green),
-      title: const Text('Daily Recitation Reminders'),
+      secondary: Icon(Icons.alarm_on_rounded, color: colors.accent),
+      title: Text('Daily Recitation Reminders', style: TextStyle(color: colors.textPrimary)),
       subtitle: Text(
         'Device Language: ${PushNotificationService.getDeviceLanguageDisplay()}',
-        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+        style: TextStyle(color: colors.textSecondary, fontSize: 12),
       ),
-      activeThumbColor: AppTheme.green,
-      activeTrackColor: AppTheme.greenPale,
+      activeThumbColor: colors.accent,
+      activeTrackColor: colors.accentSoft,
       value: _s.dailyRemindersEnabled,
       onChanged: (val) async {
         _s.dailyRemindersEnabled = val;
@@ -265,16 +323,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _testNotificationTile() {
+  Widget _testNotificationTile(AppColors colors) {
     if (kIsWeb) return const SizedBox.shrink();
     return ListTile(
-      leading: const Icon(Icons.notifications_active_outlined, color: AppTheme.green),
-      title: const Text('Send Test Notification Now'),
+      leading: Icon(Icons.notifications_active_outlined, color: colors.accent),
+      title: Text('Send Test Notification Now', style: TextStyle(color: colors.textPrimary)),
       subtitle: Text(
         'Sends a system alert in ${PushNotificationService.getDeviceLanguageDisplay()}',
-        style: const TextStyle(color: AppTheme.textSecondary, fontSize: 12),
+        style: TextStyle(color: colors.textSecondary, fontSize: 12),
       ),
-      trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppTheme.textTertiary),
+      trailing: Icon(Icons.arrow_forward_ios_rounded, size: 14, color: colors.textTertiary),
       onTap: () async {
         final success = await PushNotificationService.instance.showTestNotification();
         if (success) {
@@ -286,28 +344,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _sectionHeader(String title) => Padding(
+  Widget _sectionHeader(String title, AppColors colors) => Padding(
     padding: const EdgeInsets.fromLTRB(20, 20, 16, 6),
     child: Text(
       title.toUpperCase(),
-      style: const TextStyle(
+      style: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w600,
-        color: AppTheme.textSecondary,
+        color: colors.textSecondary,
         letterSpacing: 0.5,
       ),
     ),
   );
 
-  Widget _settingsCard(List<Widget> children) => Container(
+  Widget _settingsCard(AppColors colors, List<Widget> children) => Container(
     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
     decoration: BoxDecoration(
-      color: AppTheme.card,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
+      color: colors.card,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: colors.separator),
     ),
     child: ClipRRect(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(16),
       child: Material(
         type: MaterialType.transparency,
         child: Column(children: children),
@@ -316,6 +374,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   );
 
   Widget _sliderRow({
+    required AppColors colors,
     required String label,
     String? sub,
     required double value,
@@ -333,19 +392,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(label, style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-                if (sub != null)
-                  Text(sub, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-              ]),
-              Text(display, style: const TextStyle(color: AppTheme.green, fontWeight: FontWeight.w600)),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: colors.textPrimary)),
+                  if (sub != null)
+                    Text(sub, style: TextStyle(fontSize: 12, color: colors.textSecondary)),
+                ]),
+              ),
+              Text(display, style: TextStyle(color: colors.accent, fontWeight: FontWeight.w600)),
             ],
           ),
           SliderTheme(
             data: SliderThemeData(
-              activeTrackColor: AppTheme.green,
-              thumbColor: AppTheme.green,
-              inactiveTrackColor: AppTheme.green.withValues(alpha: 0.2),
+              activeTrackColor: colors.accent,
+              thumbColor: colors.accent,
+              inactiveTrackColor: colors.accent.withValues(alpha: 0.2),
               overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
             ),
             child: Slider(
@@ -361,10 +422,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _infoRow(String label, String sub, {Widget? trailing, Widget? leading}) => ListTile(
+  Widget _infoRow(AppColors colors, String label, String sub, {Widget? trailing, Widget? leading}) => ListTile(
     leading: leading,
-    title: Text(label, style: const TextStyle(fontSize: 15)),
-    subtitle: Text(sub, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+    title: Text(label, style: TextStyle(fontSize: 15, color: colors.textPrimary)),
+    subtitle: Text(sub, style: TextStyle(fontSize: 12, color: colors.textSecondary)),
     trailing: trailing,
   );
 }

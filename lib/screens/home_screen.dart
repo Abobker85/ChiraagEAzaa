@@ -70,16 +70,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Scaffold(
-      backgroundColor: AppTheme.bg,
+      backgroundColor: colors.bg,
       appBar: AppBar(
         scrolledUnderElevation: 0,
-        backgroundColor: AppTheme.card,
+        backgroundColor: colors.card,
         centerTitle: false,
         title: Row(
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(9),
               child: Image.asset(
                 'assets/icon/app_icon.png',
                 width: 32,
@@ -88,30 +89,30 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
             const SizedBox(width: 10),
-            const Expanded(
+            Expanded(
               child: Text(
                 'Chiraag e Azaa',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w700,
-                  color: AppTheme.textPrimary,
+                  color: colors.textPrimary,
                 ),
               ),
             ),
             if (_totalCount > 0)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
                 decoration: BoxDecoration(
-                  color: AppTheme.greenPale,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppTheme.greenBadge),
+                  color: colors.accentSoft,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: colors.accentBadge),
                 ),
                 child: Text(
                   '$_totalCount items',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: AppTheme.green,
+                    color: colors.accent,
                   ),
                 ),
               ),
@@ -122,26 +123,26 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Divider(
             height: 1,
             thickness: 0.5,
-            color: Colors.black.withValues(alpha: 0.08),
+            color: colors.separator,
           ),
         ),
       ),
       body: _cats == null
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.green))
+          ? Center(child: CircularProgressIndicator(color: colors.accent))
           : RefreshIndicator(
-              color: AppTheme.green,
+              color: colors.accent,
               onRefresh: _loadCategories,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
                 children: [
-                  _buildHeroBanner(),
+                  _buildHeroBanner(colors),
                   const SizedBox(height: 14),
-                  _buildQuickUtilities(),
-                  const SizedBox(height: 20),
-                  ..._buildFeaturedSection(),
-                  const SizedBox(height: 20),
-                  ..._buildOtherCollectionsSection(),
+                  _buildQuickUtilities(colors),
+                  const SizedBox(height: 22),
+                  ..._buildFeaturedSection(colors),
+                  const SizedBox(height: 22),
+                  ..._buildOtherCollectionsSection(colors),
                 ],
               ),
             ),
@@ -149,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── Spiritual Hero Banner ──────────────────────────────────────────────────
-  Widget _buildHeroBanner() {
+  Widget _buildHeroBanner(AppColors colors) {
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -299,25 +300,27 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── Quick Utilities ────────────────────────────────────────────────────────
-  Widget _buildQuickUtilities() {
+  Widget _buildQuickUtilities(AppColors colors) {
     return Row(
       children: [
         Expanded(
           child: _quickUtilityCard(
+            colors: colors,
             icon: Icons.blur_circular_rounded,
             title: 'Digital Tasbih',
             subtitle: 'Count Dhikr',
-            iconColor: AppTheme.green,
+            iconColor: colors.accent,
             onTap: () => widget.onSelectTab?.call(3),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: _quickUtilityCard(
+            colors: colors,
             icon: Icons.bookmark_rounded,
             title: 'Saved Lyrics',
             subtitle: 'Quick Bookmarks',
-            iconColor: const Color(0xFFC07D15),
+            iconColor: colors.gold,
             onTap: () => widget.onSelectTab?.call(4),
           ),
         ),
@@ -326,6 +329,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _quickUtilityCard({
+    required AppColors colors,
     required IconData icon,
     required String title,
     required String subtitle,
@@ -333,18 +337,16 @@ class _HomeScreenState extends State<HomeScreen> {
     required VoidCallback onTap,
   }) {
     return Material(
-      color: AppTheme.card,
-      borderRadius: BorderRadius.circular(14),
+      color: colors.card,
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.black.withValues(alpha: 0.07),
-            ),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colors.separator),
           ),
           child: Row(
             children: [
@@ -352,8 +354,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: iconColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(11),
                 ),
                 child: Icon(icon, color: iconColor, size: 21),
               ),
@@ -365,25 +367,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 13.5,
                         fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
+                        color: colors.textPrimary,
                       ),
                     ),
                     Text(
                       subtitle,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
-                        color: AppTheme.textSecondary,
+                        color: colors.textSecondary,
                       ),
                     ),
                   ],
                 ),
               ),
-              const Icon(
+              Icon(
                 Icons.chevron_right_rounded,
-                color: AppTheme.textTertiary,
+                color: colors.textTertiary,
                 size: 18,
               ),
             ],
@@ -394,7 +396,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── Featured Categories Grid ───────────────────────────────────────────────
-  List<Widget> _buildFeaturedSection() {
+  List<Widget> _buildFeaturedSection(AppColors colors) {
     if (_cats == null) return [];
 
     final featuredMap = {for (var c in _cats!) c.key: c};
@@ -411,19 +413,19 @@ class _HomeScreenState extends State<HomeScreen> {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             'Featured Categories',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
+              color: colors.textPrimary,
             ),
           ),
           Text(
             'Primary Collections',
             style: TextStyle(
               fontSize: 12,
-              color: AppTheme.textSecondary.withValues(alpha: 0.8),
+              color: colors.textSecondary,
             ),
           ),
         ],
@@ -453,7 +455,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── All Collections List ───────────────────────────────────────────────────
-  List<Widget> _buildOtherCollectionsSection() {
+  List<Widget> _buildOtherCollectionsSection(AppColors colors) {
     if (_cats == null) return [];
 
     final other = _cats!
@@ -466,25 +468,25 @@ class _HomeScreenState extends State<HomeScreen> {
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          const Text(
+          Text(
             'All Collections',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppTheme.textPrimary,
+              color: colors.textPrimary,
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
             decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: colors.inputFill,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
               '${other.length} sections',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11,
-                color: AppTheme.textSecondary,
+                color: colors.textSecondary,
               ),
             ),
           ),
@@ -493,106 +495,106 @@ class _HomeScreenState extends State<HomeScreen> {
       const SizedBox(height: 10),
       Container(
         decoration: BoxDecoration(
-          color: AppTheme.card,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: Colors.black.withValues(alpha: 0.07),
-          ),
+          color: colors.card,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: colors.separator),
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: other.length,
-            separatorBuilder: (_, __) => Divider(
-              height: 1,
-              thickness: 0.5,
-              color: Colors.black.withValues(alpha: 0.06),
-            ),
-            itemBuilder: (ctx, i) {
-              final cat = other[i];
-              final urdu = _urduSubtitles[cat.key];
-              return InkWell(
-                onTap: () => _openCategory(cat),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 13,
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: AppTheme.greenPale,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Center(
-                          child: Icon(
-                            AppCategories.getIcon(cat.key),
-                            color: AppTheme.green,
-                            size: 20,
+          borderRadius: BorderRadius.circular(16),
+          child: Material(
+            type: MaterialType.transparency,
+            child: ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: other.length,
+              separatorBuilder: (_, __) => Divider(
+                height: 1,
+                thickness: 0.5,
+                color: colors.separator,
+              ),
+              itemBuilder: (ctx, i) {
+                final cat = other[i];
+                final urdu = _urduSubtitles[cat.key];
+                return InkWell(
+                  onTap: () => _openCategory(cat),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 13,
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: colors.accentSoft,
+                            borderRadius: BorderRadius.circular(11),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              AppCategories.getIcon(cat.key),
+                              color: colors.accent,
+                              size: 20,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              cat.label,
-                              style: const TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                color: AppTheme.textPrimary,
-                              ),
-                            ),
-                            if (urdu != null)
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
                               Text(
-                                urdu,
-                                textDirection: TextDirection.rtl,
-                                style: AppTheme.arabicTextStyle(
-                                  fontSize: 14,
-                                  color: AppTheme.textSecondary
-                                      .withValues(alpha: 0.85),
+                                cat.label,
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                  color: colors.textPrimary,
                                 ),
                               ),
-                          ],
+                              if (urdu != null)
+                                Text(
+                                  urdu,
+                                  textDirection: TextDirection.rtl,
+                                  style: AppTheme.arabicTextStyle(
+                                    fontSize: 14,
+                                    color: colors.textSecondary,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
-                      ),
-                      if (cat.count > 0)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppTheme.greenPale,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            '${cat.count}',
-                            style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppTheme.green,
+                        if (cat.count > 0)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: colors.accentSoft,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '${cat.count}',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w600,
+                                color: colors.accent,
+                              ),
                             ),
                           ),
+                        const SizedBox(width: 6),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: colors.textTertiary,
+                          size: 20,
                         ),
-                      const SizedBox(width: 6),
-                      const Icon(
-                        Icons.chevron_right_rounded,
-                        color: AppTheme.textTertiary,
-                        size: 20,
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -633,19 +635,18 @@ class _FeaturedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Material(
-      color: AppTheme.card,
-      borderRadius: BorderRadius.circular(14),
+      color: colors.card,
+      borderRadius: BorderRadius.circular(18),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Container(
           padding: const EdgeInsets.all(13),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: Colors.black.withValues(alpha: 0.07),
-            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: colors.separator),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -658,13 +659,13 @@ class _FeaturedCard extends StatelessWidget {
                     width: 38,
                     height: 38,
                     decoration: BoxDecoration(
-                      color: AppTheme.greenPale,
-                      borderRadius: BorderRadius.circular(10),
+                      color: colors.accentSoft,
+                      borderRadius: BorderRadius.circular(11),
                     ),
                     child: Center(
                       child: Icon(
                         AppCategories.getIcon(cat.key),
-                        color: AppTheme.green,
+                        color: colors.accent,
                         size: 20,
                       ),
                     ),
@@ -676,15 +677,15 @@ class _FeaturedCard extends StatelessWidget {
                         vertical: 2.5,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.greenBadge.withValues(alpha: 0.5),
-                        borderRadius: BorderRadius.circular(8),
+                        color: colors.accentBadge.withValues(alpha: 0.65),
+                        borderRadius: BorderRadius.circular(9),
                       ),
                       child: Text(
                         '${cat.count}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
-                          color: AppTheme.green,
+                          color: colors.accent,
                         ),
                       ),
                     ),
@@ -697,10 +698,10 @@ class _FeaturedCard extends StatelessWidget {
                     cat.label,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14.5,
                       fontWeight: FontWeight.w700,
-                      color: AppTheme.textPrimary,
+                      color: colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -712,12 +713,12 @@ class _FeaturedCard extends StatelessWidget {
                     style: urduSubtitle != null
                         ? AppTheme.arabicTextStyle(
                             fontSize: 14,
-                            color: AppTheme.textSecondary.withValues(alpha: 0.85),
+                            color: colors.textSecondary,
                             height: 1.25,
                           )
                         : TextStyle(
                             fontSize: 11.5,
-                            color: AppTheme.textSecondary.withValues(alpha: 0.8),
+                            color: colors.textSecondary,
                           ),
                   ),
                 ],

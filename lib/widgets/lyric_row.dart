@@ -20,18 +20,14 @@ class LyricRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return AnimatedBuilder(
       animation: AppSettings.instance,
       builder: (context, _) {
         final s = AppSettings.instance;
-        // Use a scaled-down version of the content font for list titles
-        // so they grow/shrink proportionally when the user adjusts font size.
-        // LTR content: base 15 → scales with ltrFontSize (default 19).
-        // RTL content: base 15 → scales with rtlFontSize (default 46), but
-        //   list titles are short so we cap at a sensible size.
         final bool useArabic = isRtl || AppTheme.containsArabic(title);
         final double titleSize = useArabic
-            ? (s.rtlFontSize * 15 / 46).clamp(13.0, 22.0)
+            ? (s.rtlFontSize * 15 / 46).clamp(15.0, 24.0)
             : (s.ltrFontSize * 15 / 19).clamp(12.0, 20.0);
         final double subtitleSize = (titleSize * 0.8).clamp(10.0, 16.0);
 
@@ -53,12 +49,12 @@ class LyricRow extends StatelessWidget {
                             ? AppTheme.arabicTextStyle(
                                 fontSize: titleSize,
                                 fontWeight: FontWeight.w500,
-                                color: AppTheme.textPrimary,
+                                color: colors.textPrimary,
                               )
                             : TextStyle(
                                 fontSize: titleSize,
                                 fontWeight: FontWeight.w500,
-                                color: AppTheme.textPrimary,
+                                color: colors.textPrimary,
                               ),
                         textDirection: useArabic ? TextDirection.rtl : TextDirection.ltr,
                         maxLines: 2,
@@ -69,14 +65,14 @@ class LyricRow extends StatelessWidget {
                         Text(subtitle!,
                             style: TextStyle(
                               fontSize: subtitleSize,
-                              color: AppTheme.textSecondary,
+                              color: colors.textSecondary,
                             )),
                       ],
                     ],
                   ),
                 ),
                 trailing ??
-                    const Icon(Icons.chevron_right, color: AppTheme.textTertiary, size: 20),
+                    Icon(Icons.chevron_right, color: colors.textTertiary, size: 20),
               ],
             ),
           ),
@@ -89,8 +85,10 @@ class LyricRow extends StatelessWidget {
 class SectionDivider extends StatelessWidget {
   const SectionDivider({super.key});
   @override
-  Widget build(BuildContext context) =>
-      const Divider(height: 1, thickness: 0.5, indent: 16, color: AppTheme.separator);
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Divider(height: 1, thickness: 0.5, indent: 16, color: colors.separator);
+  }
 }
 
 class SectionCard extends StatelessWidget {
@@ -99,22 +97,25 @@ class SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       decoration: BoxDecoration(
-        color: AppTheme.card,
-        borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.black.withValues(alpha: 0.08)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 4, offset: const Offset(0, 1))],
+        color: colors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.separator),
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(12),
-        child: Column(children: [
-          for (int i = 0; i < children.length; i++) ...[
-            children[i],
-            if (i < children.length - 1) const SectionDivider(),
-          ]
-        ]),
+        borderRadius: BorderRadius.circular(16),
+        child: Material(
+          type: MaterialType.transparency,
+          child: Column(children: [
+            for (int i = 0; i < children.length; i++) ...[
+              children[i],
+              if (i < children.length - 1) const SectionDivider(),
+            ]
+          ]),
+        ),
       ),
     );
   }
