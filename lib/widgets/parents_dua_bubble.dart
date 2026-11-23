@@ -107,6 +107,8 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
 
   @override
   Widget build(BuildContext context) {
+    if (_dialogOpen) return const SizedBox.shrink();
+
     final media = MediaQuery.of(context);
     final size = media.size;
     final padding = media.padding;
@@ -183,7 +185,11 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text('🤲', style: TextStyle(fontSize: 15)),
+                    Icon(
+                      Icons.volunteer_activism_rounded,
+                      size: 16,
+                      color: AppTheme.gold,
+                    ),
                     SizedBox(width: 5),
                     Text(
                       'Dua',
