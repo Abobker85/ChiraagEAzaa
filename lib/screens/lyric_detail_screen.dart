@@ -874,7 +874,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                             'body': Style(
                               padding: HtmlPaddings.zero,
                               margin: Margins.zero,
-                              fontFamily: AppTheme.arabicFontFamily,
+                              fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize),
                               lineHeight: LineHeight(s.lineHeight),
@@ -885,12 +885,13 @@ class _LyricPageViewState extends State<_LyricPageView> {
                               height: Height.auto(),
                               padding: HtmlPaddings.zero,
                               margin: Margins.zero,
-                              fontFamily: AppTheme.arabicFontFamily,
+                              fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                             ),
                             '#urduTextPath': Style(
                               fontFamily: AppTheme.arabicFontFamily,
                               letterSpacing: 0,
+                              fontSize: FontSize(fontSize + 4),
                               textAlign: TextAlign.right,
                               direction: TextDirection.rtl,
                               margin: Margins.only(bottom: s.paraSpacing + 6),
@@ -899,17 +900,17 @@ class _LyricPageViewState extends State<_LyricPageView> {
                               width: Width.auto(),
                             ),
                             'span': Style(
-                              fontFamily: AppTheme.arabicFontFamily,
+                              fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                             ),
                             'li': Style(
-                              fontFamily: AppTheme.arabicFontFamily,
+                              fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize),
                               lineHeight: LineHeight(s.lineHeight),
                             ),
                             'p': Style(
-                              fontFamily: AppTheme.arabicFontFamily,
+                              fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize),
                               lineHeight: LineHeight(s.lineHeight),
@@ -917,7 +918,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                               textAlign: TextAlign.left,
                             ),
                             'h1': Style(
-                              fontFamily: AppTheme.arabicFontFamily,
+                              fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize + 4),
                               lineHeight: LineHeight(s.lineHeight),
@@ -925,7 +926,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                               textAlign: TextAlign.left,
                             ),
                             'h2': Style(
-                              fontFamily: AppTheme.arabicFontFamily,
+                              fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize + 3),
                               lineHeight: LineHeight(s.lineHeight),
@@ -933,7 +934,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                               textAlign: TextAlign.left,
                             ),
                             'h3': Style(
-                              fontFamily: AppTheme.arabicFontFamily,
+                              fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize + 2),
                               lineHeight: LineHeight(s.lineHeight),
@@ -941,7 +942,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
                               textAlign: TextAlign.left,
                             ),
                             'h4': Style(
-                              fontFamily: AppTheme.arabicFontFamily,
+                              fontFamily: AppTheme.uiFontFamily,
                               letterSpacing: 0,
                               fontSize: FontSize(fontSize + 1),
                               lineHeight: LineHeight(s.lineHeight),

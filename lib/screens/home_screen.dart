@@ -200,19 +200,34 @@ class _HomeScreenState extends State<HomeScreen> {
                       'السلام عليك يا أبا عبد الله',
                       textDirection: TextDirection.rtl,
                       style: AppTheme.arabicTextStyle(
-                        fontSize: 21,
+                        fontSize: 24,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
+                        height: 1.3,
                       ),
                     ),
                     const SizedBox(height: 3),
-                    const Text(
-                      'چراغِ عزا • Comprehensive Offline Shia Recitations',
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        color: Color(0xFFE8F5EC),
-                        fontWeight: FontWeight.w400,
-                        letterSpacing: 0,
+                    Text.rich(
+                      TextSpan(
+                        children: [
+                          TextSpan(
+                            text: 'چراغِ عزا',
+                            style: AppTheme.arabicTextStyle(
+                              fontSize: 14,
+                              color: const Color(0xFFE8F5EC),
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const TextSpan(
+                            text: ' • Comprehensive Offline Shia Recitations',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              color: Color(0xFFE8F5EC),
+                              fontWeight: FontWeight.w400,
+                              letterSpacing: 0,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -540,7 +555,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 urdu,
                                 textDirection: TextDirection.rtl,
                                 style: AppTheme.arabicTextStyle(
-                                  fontSize: 11.5,
+                                  fontSize: 14,
                                   color: AppTheme.textSecondary
                                       .withValues(alpha: 0.85),
                                 ),
@@ -696,8 +711,9 @@ class _FeaturedCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: urduSubtitle != null
                         ? AppTheme.arabicTextStyle(
-                            fontSize: 11.5,
-                            color: AppTheme.textSecondary.withValues(alpha: 0.8),
+                            fontSize: 14,
+                            color: AppTheme.textSecondary.withValues(alpha: 0.85),
+                            height: 1.25,
                           )
                         : TextStyle(
                             fontSize: 11.5,

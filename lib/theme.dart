@@ -16,7 +16,8 @@ class AppTheme {
   static const Color goldLight = Color(0xFFFDF6E2);
   static const Color goldBorder = Color(0x33D4AF37);
 
-  static const String arabicFontFamily = 'NotoSansArabic';
+  static const String arabicFontFamily = 'ScheherazadeNew';
+  static const String uiFontFamily = 'NotoSansArabic';
 
   static final RegExp _arabicScriptRegExp = RegExp(
     r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]',
@@ -27,8 +28,9 @@ class AppTheme {
 
   /// Shared text style helper for all Arabic and Urdu script text.
   ///
-  /// Uses the bundled offline TTF font and enforces `letterSpacing: 0` so
-  /// cursive Arabic/Urdu letters connect cleanly with no inter-letter gaps.
+  /// Uses the bundled offline calligraphic Naskh TTF font (Scheherazade New)
+  /// and enforces `letterSpacing: 0` so cursive Arabic/Urdu letters connect
+  /// cleanly with no inter-letter gaps.
   static TextStyle arabicTextStyle({
     double? fontSize,
     FontWeight? fontWeight,
@@ -37,7 +39,7 @@ class AppTheme {
   }) {
     return TextStyle(
       fontFamily: arabicFontFamily,
-      fontFamilyFallback: const ['NotoEmoji'],
+      fontFamilyFallback: const [uiFontFamily, 'NotoEmoji'],
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,
@@ -48,8 +50,8 @@ class AppTheme {
 
   static ThemeData get light => ThemeData(
     useMaterial3: true,
-    fontFamily: arabicFontFamily,
-    fontFamilyFallback: const ['NotoEmoji', 'Arial', 'Roboto'],
+    fontFamily: uiFontFamily,
+    fontFamilyFallback: const [arabicFontFamily, 'NotoEmoji', 'Arial', 'Roboto'],
     colorScheme: ColorScheme.fromSeed(
       seedColor: green,
       primary: green,
@@ -62,7 +64,8 @@ class AppTheme {
       elevation: 0,
       centerTitle: true,
       titleTextStyle: TextStyle(
-        fontFamily: arabicFontFamily,
+        fontFamily: uiFontFamily,
+        fontFamilyFallback: [arabicFontFamily, 'NotoEmoji'],
         color: textPrimary,
         fontSize: 17,
         fontWeight: FontWeight.w600,

@@ -1,7 +1,7 @@
 name: chiraag_e_azaa
 description: 5,128 Nouhay, Marsias, Duas, Manqabat & more
 publish_to: 'none'
-version: 1.0.1+10
+version: 1.0.1+11
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -55,6 +55,12 @@ flutter:
     - assets/fonts/
 
   fonts:
+    - family: ScheherazadeNew
+      fonts:
+        - asset: assets/fonts/ScheherazadeNew-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/ScheherazadeNew-Bold.ttf
+          weight: 700
     - family: NotoSansArabic
       fonts:
         - asset: assets/fonts/NotoSansArabic.ttf

@@ -12,18 +12,22 @@ void main() {
   setUpAll(() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    final loader = FontLoader('NotoSansArabic')
+    final naskhLoader = FontLoader('ScheherazadeNew')
+      ..addFont(rootBundle.load('assets/fonts/ScheherazadeNew-Regular.ttf'))
+      ..addFont(rootBundle.load('assets/fonts/ScheherazadeNew-Bold.ttf'));
+    await naskhLoader.load();
+    final uiLoader = FontLoader('NotoSansArabic')
       ..addFont(rootBundle.load('assets/fonts/NotoSansArabic.ttf'));
-    await loader.load();
+    await uiLoader.load();
     await DatabaseService.instance.db;
   });
 
-  test('AppTheme.arabicTextStyle uses bundled NotoSansArabic with zero letterSpacing', () {
-    final style = AppTheme.arabicTextStyle(fontSize: 21, fontWeight: FontWeight.bold);
+  test('AppTheme.arabicTextStyle uses bundled ScheherazadeNew with zero letterSpacing', () {
+    final style = AppTheme.arabicTextStyle(fontSize: 24, fontWeight: FontWeight.bold);
     expect(style.fontFamily, equals(AppTheme.arabicFontFamily));
-    expect(style.fontFamily, equals('NotoSansArabic'));
+    expect(style.fontFamily, equals('ScheherazadeNew'));
     expect(style.letterSpacing, equals(0));
-    expect(style.fontSize, equals(21));
+    expect(style.fontSize, equals(24));
     expect(style.fontWeight, equals(FontWeight.bold));
   });
 
@@ -45,7 +49,7 @@ void main() {
     expect(headerFinder, findsOneWidget);
     final headerText = tester.widget<Text>(headerFinder);
     expect(headerText.textDirection, equals(TextDirection.rtl));
-    expect(headerText.style?.fontFamily, equals('NotoSansArabic'));
+    expect(headerText.style?.fontFamily, equals('ScheherazadeNew'));
     expect(headerText.style?.letterSpacing, equals(0));
 
     for (final urduSubtitle in ['نوحہ خوانی', 'مرثیہ و سوز و سلام', 'زیارات مقدسہ', 'دعائیں و اعمال']) {
@@ -53,7 +57,7 @@ void main() {
       expect(subFinder, findsOneWidget);
       final subText = tester.widget<Text>(subFinder);
       expect(subText.textDirection, equals(TextDirection.rtl));
-      expect(subText.style?.fontFamily, equals('NotoSansArabic'));
+      expect(subText.style?.fontFamily, equals('ScheherazadeNew'));
       expect(subText.style?.letterSpacing, equals(0));
     }
   });
