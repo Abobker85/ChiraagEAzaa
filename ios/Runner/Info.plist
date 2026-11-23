@@ -38,6 +38,8 @@
         <string>fetch</string>
         <string>remote-notification</string>
     </array>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Chiraag e Azaa uses the microphone only when you tap Record in the Holy Quran section to save your personal recitation practice locally on your device.</string>
     <key>UILaunchStoryboardName</key>
     <string>LaunchScreen</string>
     <key>UIMainStoryboardFile</key>

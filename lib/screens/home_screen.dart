@@ -4,6 +4,7 @@ import '../models/lyric_item.dart';
 import '../services/database_service.dart';
 import 'category_screen.dart';
 import 'dua_hub_screen.dart';
+import 'quran_hub_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onSelectTab;
@@ -139,6 +140,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   _buildHeroBanner(colors),
                   const SizedBox(height: 14),
                   _buildQuickUtilities(colors),
+                  const SizedBox(height: 14),
+                  _buildQuranBannerCard(colors),
                   const SizedBox(height: 22),
                   ..._buildFeaturedSection(colors),
                   const SizedBox(height: 22),
@@ -387,6 +390,102 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icons.chevron_right_rounded,
                 color: colors.textTertiary,
                 size: 18,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Holy Quran Entry Card ──────────────────────────────────────────────────
+  Widget _buildQuranBannerCard(AppColors colors) {
+    return Material(
+      color: colors.card,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        key: const Key('home_quran_card'),
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const QuranHubScreen()),
+        ),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: colors.gold.withValues(alpha: 0.55),
+              width: 1.2,
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colors.accentSoft,
+                colors.goldSoft.withValues(alpha: 0.65),
+              ],
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: colors.accent,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(
+                  Icons.auto_stories_rounded,
+                  color: AppTheme.gold,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Holy Quran',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'القرآن الكريم',
+                          textDirection: TextDirection.rtl,
+                          style: AppTheme.arabicTextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                            color: colors.accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '114 Surahs · Arabic, Roman, English & Recitation',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: colors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: colors.accent,
+                size: 22,
               ),
             ],
           ),
