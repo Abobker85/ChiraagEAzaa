@@ -63,7 +63,7 @@ void main() {
     expect(find.text('Para 1 (Juz 1)'), findsOneWidget);
   });
 
-  testWidgets('QuranReaderScreen displays Arabic, Roman, English, and Record button', (tester) async {
+  testWidgets('QuranReaderScreen defaults to Mushaf page and toggles to Roman/English view', (tester) async {
     tester.view.physicalSize = const Size(390 * 2, 844 * 2);
     tester.view.devicePixelRatio = 2.0;
     addTearDown(tester.view.reset);
@@ -78,6 +78,13 @@ void main() {
 
     expect(find.text('Al-Faatiha'), findsOneWidget);
     expect(find.byKey(const Key('quran_record_button')), findsOneWidget);
+    // Default Mushaf page mode shows continuous flowing ayahs + tap hint
+    expect(find.text('Tap any Ayah for Roman, English & Audio'), findsOneWidget);
+
+    // Switch to Translation (Roman & English) view
+    await tester.tap(find.byKey(const Key('quran_view_mode_toggle')));
+    await tester.pumpAndSettle();
+
     final fatihaFirst = QuranService.instance.getSurah(1)!.ayahs.first;
     expect(find.text(fatihaFirst.roman), findsOneWidget);
     expect(find.text(fatihaFirst.english), findsOneWidget);
