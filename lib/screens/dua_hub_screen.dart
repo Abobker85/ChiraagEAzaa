@@ -465,11 +465,20 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                     children: [
                       Text(
                         item.title,
-                        style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.textPrimary,
-                        ),
+                        textDirection: AppTheme.containsArabic(item.title)
+                            ? TextDirection.rtl
+                            : TextDirection.ltr,
+                        style: AppTheme.containsArabic(item.title)
+                            ? AppTheme.arabicTextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textPrimary,
+                              )
+                            : const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppTheme.textPrimary,
+                              ),
                       ),
                       if (item.subtitle.isNotEmpty) ...[
                         const SizedBox(height: 2),

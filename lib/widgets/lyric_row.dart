@@ -29,7 +29,8 @@ class LyricRow extends StatelessWidget {
         // LTR content: base 15 → scales with ltrFontSize (default 19).
         // RTL content: base 15 → scales with rtlFontSize (default 46), but
         //   list titles are short so we cap at a sensible size.
-        final double titleSize = isRtl
+        final bool useArabic = isRtl || AppTheme.containsArabic(title);
+        final double titleSize = useArabic
             ? (s.rtlFontSize * 15 / 46).clamp(13.0, 22.0)
             : (s.ltrFontSize * 15 / 19).clamp(12.0, 20.0);
         final double subtitleSize = (titleSize * 0.8).clamp(10.0, 16.0);
@@ -42,13 +43,13 @@ class LyricRow extends StatelessWidget {
               children: [
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: isRtl
+                    crossAxisAlignment: useArabic
                         ? CrossAxisAlignment.end
                         : CrossAxisAlignment.start,
                     children: [
                       Text(
                         title,
-                        style: isRtl
+                        style: useArabic
                             ? AppTheme.arabicTextStyle(
                                 fontSize: titleSize,
                                 fontWeight: FontWeight.w500,
@@ -59,7 +60,7 @@ class LyricRow extends StatelessWidget {
                                 fontWeight: FontWeight.w500,
                                 color: AppTheme.textPrimary,
                               ),
-                        textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+                        textDirection: useArabic ? TextDirection.rtl : TextDirection.ltr,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),

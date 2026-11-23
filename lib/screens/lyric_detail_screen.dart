@@ -413,11 +413,20 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
                               ),
                               title: Text(
                                 item.title,
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                                  color: isCurrent ? AppTheme.green : AppTheme.textPrimary,
-                                ),
+                                textDirection: AppTheme.containsArabic(item.title)
+                                    ? TextDirection.rtl
+                                    : TextDirection.ltr,
+                                style: AppTheme.containsArabic(item.title)
+                                    ? AppTheme.arabicTextStyle(
+                                        fontSize: 14,
+                                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                                        color: isCurrent ? AppTheme.green : AppTheme.textPrimary,
+                                      )
+                                    : TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                                        color: isCurrent ? AppTheme.green : AppTheme.textPrimary,
+                                      ),
                               ),
                               subtitle: item.subtitle.isNotEmpty
                                   ? Text(
@@ -483,7 +492,16 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
               _currentItem.title,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+              textDirection: AppTheme.containsArabic(_currentItem.title)
+                  ? TextDirection.rtl
+                  : TextDirection.ltr,
+              style: AppTheme.containsArabic(_currentItem.title)
+                  ? AppTheme.arabicTextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.textPrimary,
+                    )
+                  : const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
             ),
             if (hasMultiple)
               Text(
@@ -856,6 +874,8 @@ class _LyricPageViewState extends State<_LyricPageView> {
                             'body': Style(
                               padding: HtmlPaddings.zero,
                               margin: Margins.zero,
+                              fontFamily: AppTheme.arabicFontFamily,
+                              letterSpacing: 0,
                               fontSize: FontSize(fontSize),
                               lineHeight: LineHeight(s.lineHeight),
                               textAlign: TextAlign.left,
@@ -865,35 +885,64 @@ class _LyricPageViewState extends State<_LyricPageView> {
                               height: Height.auto(),
                               padding: HtmlPaddings.zero,
                               margin: Margins.zero,
+                              fontFamily: AppTheme.arabicFontFamily,
+                              letterSpacing: 0,
+                            ),
+                            '#urduTextPath': Style(
+                              fontFamily: AppTheme.arabicFontFamily,
+                              letterSpacing: 0,
+                              textAlign: TextAlign.right,
+                              direction: TextDirection.rtl,
+                              margin: Margins.only(bottom: s.paraSpacing + 6),
                             ),
                             'table': Style(
                               width: Width.auto(),
                             ),
+                            'span': Style(
+                              fontFamily: AppTheme.arabicFontFamily,
+                              letterSpacing: 0,
+                            ),
+                            'li': Style(
+                              fontFamily: AppTheme.arabicFontFamily,
+                              letterSpacing: 0,
+                              fontSize: FontSize(fontSize),
+                              lineHeight: LineHeight(s.lineHeight),
+                            ),
                             'p': Style(
+                              fontFamily: AppTheme.arabicFontFamily,
+                              letterSpacing: 0,
                               fontSize: FontSize(fontSize),
                               lineHeight: LineHeight(s.lineHeight),
                               margin: Margins.only(bottom: s.paraSpacing),
                               textAlign: TextAlign.left,
                             ),
                             'h1': Style(
+                              fontFamily: AppTheme.arabicFontFamily,
+                              letterSpacing: 0,
                               fontSize: FontSize(fontSize + 4),
                               lineHeight: LineHeight(s.lineHeight),
                               margin: Margins.only(bottom: s.paraSpacing + 4),
                               textAlign: TextAlign.left,
                             ),
                             'h2': Style(
+                              fontFamily: AppTheme.arabicFontFamily,
+                              letterSpacing: 0,
                               fontSize: FontSize(fontSize + 3),
                               lineHeight: LineHeight(s.lineHeight),
                               margin: Margins.only(bottom: s.paraSpacing + 4),
                               textAlign: TextAlign.left,
                             ),
                             'h3': Style(
+                              fontFamily: AppTheme.arabicFontFamily,
+                              letterSpacing: 0,
                               fontSize: FontSize(fontSize + 2),
                               lineHeight: LineHeight(s.lineHeight),
                               margin: Margins.only(bottom: s.paraSpacing + 4),
                               textAlign: TextAlign.left,
                             ),
                             'h4': Style(
+                              fontFamily: AppTheme.arabicFontFamily,
+                              letterSpacing: 0,
                               fontSize: FontSize(fontSize + 1),
                               lineHeight: LineHeight(s.lineHeight),
                               margin: Margins.only(bottom: s.paraSpacing + 2),
@@ -933,10 +982,24 @@ class _LyricPageViewState extends State<_LyricPageView> {
     if (_blocks.isEmpty) {
       if (_html == null) return [];
       final clean = _cleanHtmlEntities(_html!.replaceAll(RegExp(r'<[^>]+>'), '')).trim();
+      final isAr = _isRtl || AppTheme.containsArabic(clean);
       return [
         Padding(
           padding: const EdgeInsets.all(16),
-          child: Text(clean, style: TextStyle(fontSize: s.ltrFontSize)),
+          child: Directionality(
+            textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
+            child: Text(
+              clean,
+              textAlign: isAr ? TextAlign.right : TextAlign.left,
+              style: isAr
+                  ? AppTheme.arabicTextStyle(
+                      fontSize: s.arabicFontSize,
+                      height: s.lineHeight + 0.3,
+                      color: AppTheme.textPrimary,
+                    )
+                  : TextStyle(fontSize: s.ltrFontSize),
+            ),
+          ),
         ),
       ];
     }

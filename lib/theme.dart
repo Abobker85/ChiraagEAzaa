@@ -18,6 +18,13 @@ class AppTheme {
 
   static const String arabicFontFamily = 'NotoSansArabic';
 
+  static final RegExp _arabicScriptRegExp = RegExp(
+    r'[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]',
+  );
+
+  /// Returns true if [text] contains any Arabic/Urdu script characters.
+  static bool containsArabic(String text) => _arabicScriptRegExp.hasMatch(text);
+
   /// Shared text style helper for all Arabic and Urdu script text.
   ///
   /// Uses the bundled offline TTF font and enforces `letterSpacing: 0` so
@@ -55,9 +62,11 @@ class AppTheme {
       elevation: 0,
       centerTitle: true,
       titleTextStyle: TextStyle(
+        fontFamily: arabicFontFamily,
         color: textPrimary,
         fontSize: 17,
         fontWeight: FontWeight.w600,
+        letterSpacing: 0,
       ),
     ),
     bottomNavigationBarTheme: const BottomNavigationBarThemeData(

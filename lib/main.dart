@@ -12,6 +12,7 @@ import 'screens/search_screen.dart';
 import 'screens/tasbih_screen.dart';
 import 'screens/saved_screen.dart';
 import 'screens/settings_screen.dart';
+import 'widgets/parents_dua_bubble.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,13 +31,24 @@ void main() {
 class ChiraagApp extends StatelessWidget {
   final Widget home;
 
+  static final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
   const ChiraagApp({super.key, this.home = const AppInitializer()});
 
   @override
   Widget build(BuildContext context) => MaterialApp(
     title: 'Chiraag e Azaa',
+    navigatorKey: _navigatorKey,
     debugShowCheckedModeBanner: false,
     theme: AppTheme.light,
+    builder: (context, child) {
+      return Stack(
+        children: [
+          if (child != null) child,
+          ParentsDuaBubble(navigatorKey: _navigatorKey),
+        ],
+      );
+    },
     home: home,
   );
 }
