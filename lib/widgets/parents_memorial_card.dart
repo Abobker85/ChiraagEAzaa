@@ -9,12 +9,12 @@ class ParentsMemorialCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final primaryText = isDark ? Colors.white : AppTheme.textPrimary;
-    final secondaryText = isDark ? Colors.white70 : AppTheme.textSecondary;
-    final accentColor = isDark ? AppTheme.gold : const Color(0xFF8A7230);
+    final primaryText = isDark ? const Color(0xFFFFFFFF) : const Color(0xFF0E1310);
+    final secondaryText = isDark ? const Color(0xFFD8E0DA) : const Color(0xFF2D3631);
+    final accentColor = isDark ? const Color(0xFFF0CE6E) : const Color(0xFF7A5A0F);
     final frameBorderColor = isDark
-        ? AppTheme.gold.withValues(alpha: 0.5)
-        : const Color(0xFFC5B07A);
+        ? AppTheme.gold.withValues(alpha: 0.65)
+        : const Color(0xFF9A7B2C);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),

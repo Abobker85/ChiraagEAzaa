@@ -243,7 +243,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ]),
             _sectionHeader('Credits', colors),
             _settingsCard(colors, [
-              _infoRow(colors, 'Designed & Developed by', 'Mir Ali', trailing: const Text('💚', style: TextStyle(fontSize: 20))),
+              _infoRow(colors, 'Designed & Developed by', 'Mir Sajjad Ali', trailing: const Text('💚', style: TextStyle(fontSize: 20))),
               Divider(height: 1, thickness: 0.5, color: colors.separator),
               ListTile(
                 title: Text('Email', style: TextStyle(color: colors.textPrimary)),

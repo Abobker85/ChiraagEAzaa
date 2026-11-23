@@ -64,7 +64,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Designed & Developed by'), findsOneWidget);
-      expect(find.text('Mir Ali'), findsOneWidget);
+      expect(find.text('Mir Sajjad Ali'), findsOneWidget);
 
       await tester.scrollUntilVisible(
         find.text('gisdevpr31@gmail.com'),

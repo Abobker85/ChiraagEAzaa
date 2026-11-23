@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../theme.dart';
-import 'glass_container.dart';
 import 'parents_memorial_card.dart';
 
 /// Global draggable Liquid Glass floating bubble shown across every screen.
@@ -36,63 +35,64 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
       await showDialog<void>(
         context: navContext,
         barrierDismissible: true,
+        barrierColor: Colors.black.withValues(alpha: 0.62),
         builder: (ctx) {
           final colors = AppColors.of(ctx);
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
-          final borderColor = colors.gold.withValues(alpha: isDark ? 0.45 : 0.55);
+          final surfaceColor = isDark ? const Color(0xFF181E1A) : const Color(0xFFFFFDF8);
+          final borderColor = isDark
+              ? AppTheme.gold.withValues(alpha: 0.55)
+              : const Color(0xFF9A7B2C).withValues(alpha: 0.65);
 
           return Dialog(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
+            backgroundColor: surfaceColor,
+            surfaceTintColor: Colors.transparent,
+            elevation: 16,
             insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+              side: BorderSide(color: borderColor, width: 1.4),
+            ),
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 420),
-              child: GlassContainer(
-                borderRadius: BorderRadius.circular(22),
-                tintColor: isDark
-                    ? colors.card.withValues(alpha: 0.94)
-                    : colors.card.withValues(alpha: 0.96),
-                borderColor: borderColor,
-                borderWidth: 1.2,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 12, 8, 4),
-                      child: Row(
-                        children: [
-                          const Text('🤲', style: TextStyle(fontSize: 18)),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Parents Dua',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w700,
-                                color: isDark ? Colors.white : colors.accent,
-                              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(18, 12, 8, 6),
+                    child: Row(
+                      children: [
+                        const Text('🤲', style: TextStyle(fontSize: 18)),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Parents Dua',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: isDark ? Colors.white : const Color(0xFF144A20),
                             ),
                           ),
-                          IconButton(
-                            tooltip: 'Close',
-                            icon: Icon(
-                              Icons.close_rounded,
-                              size: 20,
-                              color: colors.textSecondary,
-                            ),
-                            onPressed: () => Navigator.of(ctx).pop(),
+                        ),
+                        IconButton(
+                          tooltip: 'Close',
+                          icon: Icon(
+                            Icons.close_rounded,
+                            size: 21,
+                            color: isDark ? Colors.white70 : const Color(0xFF2D3631),
                           ),
-                        ],
-                      ),
+                          onPressed: () => Navigator.of(ctx).pop(),
+                        ),
+                      ],
                     ),
-                    Divider(height: 1, thickness: 0.5, color: colors.separator),
-                    const Flexible(
-                      child: SingleChildScrollView(
-                        child: ParentsMemorialCard(),
-                      ),
+                  ),
+                  Divider(height: 1, thickness: 0.6, color: colors.separator),
+                  const Flexible(
+                    child: SingleChildScrollView(
+                      child: ParentsMemorialCard(),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           );

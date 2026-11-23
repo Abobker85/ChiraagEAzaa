@@ -49,16 +49,19 @@ class GlassContainer extends StatelessWidget {
       padding: padding,
       decoration: BoxDecoration(
         color: disableBlur
-            ? (isDark ? colors.card : colors.card.withValues(alpha: 0.96))
+            ? (isDark ? colors.card : colors.card.withValues(alpha: 0.98))
             : effectiveTint,
         borderRadius: borderRadius,
         border: Border.all(color: effectiveBorder, width: borderWidth),
+      ),
+      foregroundDecoration: BoxDecoration(
+        borderRadius: borderRadius,
         gradient: LinearGradient(
           begin: Alignment.topCenter,
           end: Alignment.bottomCenter,
           colors: [
-            Colors.white.withValues(alpha: isDark ? 0.10 : 0.42),
-            Colors.white.withValues(alpha: isDark ? 0.02 : 0.06),
+            Colors.white.withValues(alpha: isDark ? 0.08 : 0.22),
+            Colors.transparent,
           ],
         ),
       ),
