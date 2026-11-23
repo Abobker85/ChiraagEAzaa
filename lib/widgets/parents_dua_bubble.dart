@@ -21,13 +21,25 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
   // Position from top-left once dragged; null uses default bottom-right anchor.
   Offset? _offset;
   bool _dialogOpen = false;
+  BuildContext? _dialogContext;
 
   static const double _bubbleWidth = 88;
   static const double _bubbleHeight = 40;
 
-  Future<void> _openParentsDua() async {
+  Future<void> _toggleParentsDua() async {
+    if (_dialogOpen) {
+      HapticFeedback.lightImpact();
+      final ctx = _dialogContext;
+      if (ctx != null && ctx.mounted) {
+        Navigator.of(ctx).pop();
+      } else {
+        widget.navigatorKey.currentState?.maybePop();
+      }
+      return;
+    }
+
     final navContext = widget.navigatorKey.currentContext;
-    if (navContext == null || _dialogOpen) return;
+    if (navContext == null) return;
 
     HapticFeedback.lightImpact();
     setState(() => _dialogOpen = true);
@@ -37,6 +49,7 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
         barrierDismissible: true,
         barrierColor: Colors.black.withValues(alpha: 0.62),
         builder: (ctx) {
+          _dialogContext = ctx;
           final colors = AppColors.of(ctx);
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
           final surfaceColor = isDark ? const Color(0xFF181E1A) : const Color(0xFFFFFDF8);
@@ -48,7 +61,7 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
             backgroundColor: surfaceColor,
             surfaceTintColor: Colors.transparent,
             elevation: 16,
-            insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 28),
+            insetPadding: const EdgeInsets.fromLTRB(20, 28, 20, 100),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(22),
               side: BorderSide(color: borderColor, width: 1.4),
@@ -59,10 +72,14 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 12, 8, 6),
+                    padding: const EdgeInsets.fromLTRB(18, 12, 12, 8),
                     child: Row(
                       children: [
-                        const Text('🤲', style: TextStyle(fontSize: 18)),
+                        Icon(
+                          Icons.volunteer_activism_rounded,
+                          size: 19,
+                          color: isDark ? AppTheme.gold : const Color(0xFF1A5C28),
+                        ),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -74,14 +91,22 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
                             ),
                           ),
                         ),
-                        IconButton(
-                          tooltip: 'Close',
-                          icon: Icon(
-                            Icons.close_rounded,
-                            size: 21,
-                            color: isDark ? Colors.white70 : const Color(0xFF2D3631),
+                        Material(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.14)
+                              : const Color(0xFFE5E9E6),
+                          shape: const CircleBorder(),
+                          child: IconButton(
+                            tooltip: 'Close',
+                            constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                            padding: EdgeInsets.zero,
+                            icon: Icon(
+                              Icons.close_rounded,
+                              size: 20,
+                              color: isDark ? Colors.white : const Color(0xFF141816),
+                            ),
+                            onPressed: () => Navigator.of(ctx).pop(),
                           ),
-                          onPressed: () => Navigator.of(ctx).pop(),
                         ),
                       ],
                     ),
@@ -99,6 +124,7 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
         },
       );
     } finally {
+      _dialogContext = null;
       if (mounted) {
         setState(() => _dialogOpen = false);
       }
@@ -107,8 +133,6 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
 
   @override
   Widget build(BuildContext context) {
-    if (_dialogOpen) return const SizedBox.shrink();
-
     final media = MediaQuery.of(context);
     final size = media.size;
     final padding = media.padding;
@@ -156,7 +180,7 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
             child: InkWell(
               key: const Key('parents_dua_bubble'),
               borderRadius: BorderRadius.circular(24),
-              onTap: _openParentsDua,
+              onTap: _toggleParentsDua,
               child: Ink(
                 width: _bubbleWidth,
                 height: _bubbleHeight,
@@ -182,18 +206,20 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
                     ),
                   ],
                 ),
-                child: const Row(
+                child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
-                      Icons.volunteer_activism_rounded,
+                      _dialogOpen
+                          ? Icons.close_rounded
+                          : Icons.volunteer_activism_rounded,
                       size: 16,
                       color: AppTheme.gold,
                     ),
-                    SizedBox(width: 5),
+                    const SizedBox(width: 5),
                     Text(
-                      'Dua',
-                      style: TextStyle(
+                      _dialogOpen ? 'Hide' : 'Dua',
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12.5,
                         fontWeight: FontWeight.w700,

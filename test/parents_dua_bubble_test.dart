@@ -55,7 +55,7 @@ void main() {
     final bubble = find.byKey(const Key('parents_dua_bubble'));
     expect(bubble, findsOneWidget);
 
-    // Tap bubble to open Parents Dua dialog
+    // Tap bubble once to open Parents Dua dialog
     await tester.tap(bubble);
     await tester.pumpAndSettle();
 
@@ -65,7 +65,16 @@ void main() {
     expect(find.text('Ex-Secretary, Anjuman-e-Parwanah Jaffariyah'), findsOneWidget);
     expect(find.text('Al-Haj O Zawaraa Syeda Zainab Fatima'), findsOneWidget);
 
-    // Close dialog
+    // Tap bubble a second time to hide/close the dialog
+    await tester.tap(bubble);
+    await tester.pumpAndSettle();
+    expect(find.text('Parents Dua'), findsNothing);
+
+    // Open again and close via the top-right Close button
+    await tester.tap(bubble);
+    await tester.pumpAndSettle();
+    expect(find.text('Parents Dua'), findsOneWidget);
+
     await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
     expect(find.text('Parents Dua'), findsNothing);
