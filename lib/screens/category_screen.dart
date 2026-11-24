@@ -133,7 +133,15 @@ class _ArtistScreenState extends State<ArtistScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.artist.name),
+        title: Text(
+          widget.artist.name,
+          textDirection: AppTheme.containsArabic(widget.artist.name)
+              ? TextDirection.rtl
+              : TextDirection.ltr,
+          style: AppTheme.containsArabic(widget.artist.name)
+              ? AppTheme.arabicTextStyle(fontSize: 20, fontWeight: FontWeight.w700)
+              : null,
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, size: 18),
           onPressed: () => Navigator.pop(context),

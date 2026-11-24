@@ -13,7 +13,6 @@ import 'screens/tasbih_screen.dart';
 import 'screens/saved_screen.dart';
 import 'screens/settings_screen.dart';
 import 'widgets/glass_container.dart';
-import 'widgets/parents_dua_bubble.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,14 +46,6 @@ class ChiraagApp extends StatelessWidget {
         theme: AppTheme.light,
         darkTheme: AppTheme.dark,
         themeMode: AppSettings.instance.themeMode,
-        builder: (context, child) {
-          return Stack(
-            children: [
-              if (child != null) child,
-              ParentsDuaBubble(navigatorKey: _navigatorKey),
-            ],
-          );
-        },
         home: home,
       ),
     );

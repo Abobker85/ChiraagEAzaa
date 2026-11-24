@@ -5,6 +5,7 @@ import '../services/database_service.dart';
 import 'category_screen.dart';
 import 'dua_hub_screen.dart';
 import 'quran_hub_screen.dart';
+import '../widgets/parents_dua_bubble.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onSelectTab;
@@ -128,27 +129,32 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      body: _cats == null
-          ? Center(child: CircularProgressIndicator(color: colors.accent))
-          : RefreshIndicator(
-              color: colors.accent,
-              onRefresh: _loadCategories,
-              child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
-                children: [
-                  _buildHeroBanner(colors),
-                  const SizedBox(height: 14),
-                  _buildQuickUtilities(colors),
-                  const SizedBox(height: 14),
-                  _buildQuranBannerCard(colors),
-                  const SizedBox(height: 22),
-                  ..._buildFeaturedSection(colors),
-                  const SizedBox(height: 22),
-                  ..._buildOtherCollectionsSection(colors),
-                ],
-              ),
-            ),
+      body: Stack(
+        children: [
+          _cats == null
+              ? Center(child: CircularProgressIndicator(color: colors.accent))
+              : RefreshIndicator(
+                  color: colors.accent,
+                  onRefresh: _loadCategories,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
+                    children: [
+                      _buildHeroBanner(colors),
+                      const SizedBox(height: 14),
+                      _buildQuickUtilities(colors),
+                      const SizedBox(height: 14),
+                      _buildQuranBannerCard(colors),
+                      const SizedBox(height: 22),
+                      ..._buildFeaturedSection(colors),
+                      const SizedBox(height: 22),
+                      ..._buildOtherCollectionsSection(colors),
+                    ],
+                  ),
+                ),
+          const ParentsDuaBubble(),
+        ],
+      ),
     );
   }
 

@@ -45,7 +45,15 @@ class _LyricListScreenState extends State<LyricListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.title),
+        title: Text(
+          widget.title,
+          textDirection: AppTheme.containsArabic(widget.title)
+              ? TextDirection.rtl
+              : TextDirection.ltr,
+          style: AppTheme.containsArabic(widget.title)
+              ? AppTheme.arabicTextStyle(fontSize: 20, fontWeight: FontWeight.w700)
+              : null,
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios, size: 18),
           onPressed: () => Navigator.pop(context),

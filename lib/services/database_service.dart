@@ -17,7 +17,7 @@ class DatabaseService {
   Database? _db;
 
   static const _dbName = 'chiraag_e_azaa.db';
-  static const _dbVersion = 1; // bump when shipping a new DB asset
+  static const _dbVersion = 2; // bump when shipping a new DB asset
 
   // ── Init ──────────────────────────────────────────────────────────────
   Future<Database> get db async {
@@ -39,6 +39,22 @@ class DatabaseService {
         await _needsUpdate(dbPath);
 
     if (shouldCopy) {
+      // Preserve user bookmarks and settings when upgrading an existing DB file
+      List<Map<String, Object?>> savedBookmarks = const [];
+      List<Map<String, Object?>> savedSettings = const [];
+      if (File(dbPath).existsSync()) {
+        try {
+          final oldDb = await openDatabase(dbPath, readOnly: true);
+          try {
+            savedBookmarks = await oldDb.query('bookmarks');
+          } catch (_) {}
+          try {
+            savedSettings = await oldDb.query('settings');
+          } catch (_) {}
+          await oldDb.close();
+        } catch (_) {}
+      }
+
       debugPrint('DatabaseService: copying DB from assets…');
       final targetFile = File(dbPath);
       if (!targetFile.parent.existsSync()) {
@@ -58,6 +74,29 @@ class DatabaseService {
       }
       await tempFile.rename(dbPath);
       debugPrint('DatabaseService: DB copied (${bytes.length} bytes)');
+
+      if (savedBookmarks.isNotEmpty || savedSettings.isNotEmpty) {
+        try {
+          final upgraded = await openDatabase(dbPath, readOnly: false, version: _dbVersion);
+          if (savedBookmarks.isNotEmpty) {
+            await upgraded.execute('''
+              CREATE TABLE IF NOT EXISTS bookmarks (
+                lyric_id  INTEGER PRIMARY KEY,
+                saved_at  TEXT NOT NULL DEFAULT (datetime('now'))
+              )
+            ''');
+            for (final b in savedBookmarks) {
+              await upgraded.insert('bookmarks', b, conflictAlgorithm: ConflictAlgorithm.ignore);
+            }
+          }
+          for (final s in savedSettings) {
+            await upgraded.insert('settings', s, conflictAlgorithm: ConflictAlgorithm.replace);
+          }
+          await upgraded.close();
+        } catch (e) {
+          debugPrint('DatabaseService: restore user data warning: $e');
+        }
+      }
     }
 
     try {

@@ -113,7 +113,10 @@ void main() {
       await tester.pumpAndSettle();
 
       final arabicTextFinder = find.byWidgetPredicate(
-        (w) => w is Text && (w.data ?? '').contains('اللّٰهُ') && w.textAlign == TextAlign.right,
+        (w) =>
+            w is Text &&
+            ((w.data ?? '').contains('اللّٰهُ') || (w.data ?? '').contains('اللَّهُ')) &&
+            w.textAlign == TextAlign.right,
       );
       expect(arabicTextFinder, findsWidgets);
 

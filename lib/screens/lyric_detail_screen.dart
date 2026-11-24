@@ -4,6 +4,7 @@ import 'package:flutter_html/flutter_html.dart';
 import '../theme.dart';
 import '../models/lyric_item.dart';
 import '../services/database_service.dart';
+import '../services/dua_language_service.dart';
 import '../services/settings_service.dart';
 
 class LyricDetailScreen extends StatefulWidget {
@@ -40,6 +41,13 @@ class LyricDetailScreen extends StatefulWidget {
     cleaned = cleaned.replaceAllMapped(
       RegExp(r'<[a-zA-Z][^>]*>'),
       (match) => match.group(0)!.replaceAll(attrPattern, ''),
+    );
+
+    // Ensure any inline Arabic/Urdu text runs inside LTR HTML use the Quranic
+    // ScheherazadeNew font via the `.ar` CSS class.
+    cleaned = cleaned.replaceAllMapped(
+      RegExp(r'>([^<]*[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF][^<]*)<'),
+      (m) => '><span class="ar">${m.group(1)}</span><',
     );
 
     return cleaned;
@@ -784,6 +792,7 @@ class _LyricPageView extends StatefulWidget {
 
 class _LyricPageViewState extends State<_LyricPageView> {
   String? _html;
+  MultilangDua? _multilangDua;
   List<_ContentBlock> _blocks = [];
   bool _loading = true;
   late bool _isRtl;
@@ -817,16 +826,28 @@ class _LyricPageViewState extends State<_LyricPageView> {
   }
 
   Future<void> _load() async {
+    await DuaLanguageService.instance.ensureLoaded();
     final detail = await DatabaseService.instance.getLyricDetail(widget.item.id);
     if (!mounted) return;
     final raw = detail?.contentHtml;
+    final multilang = widget.item.categoryKey == 'duas'
+        ? DuaLanguageService.instance.getByTitle(widget.item.title)
+        : null;
     final blocks = raw != null && _isRtl ? _parseBlocks(raw) : <_ContentBlock>[];
     setState(() {
       _html = raw;
+      _multilangDua = multilang;
       _blocks = blocks;
       _loading = false;
     });
-    widget.onContentLoaded(raw);
+    if (multilang != null) {
+      final combined = multilang.verses
+          .map((v) => '${v.arabic}\n${v.roman}\n${v.english}')
+          .join('\n\n');
+      widget.onContentLoaded(combined);
+    } else {
+      widget.onContentLoaded(raw);
+    }
   }
 
   List<_ContentBlock> _parseBlocks(String raw) {
@@ -914,13 +935,17 @@ class _LyricPageViewState extends State<_LyricPageView> {
     return Stack(
       children: [
         AnimatedBuilder(
-          animation: AppSettings.instance,
+          animation: Listenable.merge([
+            AppSettings.instance,
+            DuaLanguageService.instance,
+          ]),
           builder: (context, _) {
             final s = AppSettings.instance;
             final colors = AppColors.of(context);
             final isNight = s.readerSurface == 'dark' ||
                 (s.readerSurface != 'light' && Theme.of(context).brightness == Brightness.dark);
             final readerTextColor = isNight ? const Color(0xFFF2F5F3) : AppTheme.textPrimary;
+            final cardBg = isNight ? const Color(0xFF1B221D) : const Color(0xFFFFFDF7);
             final fontSize = _isRtl ? s.rtlFontSize : s.ltrFontSize;
 
             return SingleChildScrollView(
@@ -929,7 +954,15 @@ class _LyricPageViewState extends State<_LyricPageView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (_isRtl)
+                  if (_multilangDua != null)
+                    ..._buildMultilangDuaView(
+                      _multilangDua!,
+                      s,
+                      readerTextColor,
+                      cardBg,
+                      colors,
+                    )
+                  else if (_isRtl)
                     ..._buildParsedBlocks(s, readerTextColor, colors)
                   else
                     Padding(
@@ -939,6 +972,13 @@ class _LyricPageViewState extends State<_LyricPageView> {
                         child: Html(
                           data: LyricDetailScreen.sanitizeLtrHtml(_html!),
                           style: {
+                            '.ar': Style(
+                              fontFamily: AppTheme.arabicFontFamily,
+                              letterSpacing: 0,
+                              fontSize: FontSize((s.arabicFontSize * 0.85).clamp(20.0, 42.0)),
+                              lineHeight: const LineHeight(2.0),
+                              direction: TextDirection.rtl,
+                            ),
                             'body': Style(
                               padding: HtmlPaddings.zero,
                               margin: Margins.zero,
@@ -1147,7 +1187,7 @@ class _LyricPageViewState extends State<_LyricPageView> {
           ),
         );
       } else {
-        // Arabic / Urdu script text
+        // Arabic / Urdu script text (unified with Quran Mushaf ScheherazadeNew typography)
         widgets.add(
           Padding(
             padding: EdgeInsets.fromLTRB(
@@ -1162,8 +1202,8 @@ class _LyricPageViewState extends State<_LyricPageView> {
                 block.text,
                 textAlign: TextAlign.right,
                 style: AppTheme.arabicTextStyle(
-                  fontSize: s.arabicFontSize,
-                  height: s.lineHeight + 0.3,
+                  fontSize: s.arabicFontSize.clamp(24.0, 52.0),
+                  height: 2.05,
                   color: textColor,
                 ),
               ),
@@ -1174,6 +1214,177 @@ class _LyricPageViewState extends State<_LyricPageView> {
     }
 
     return widgets;
+  }
+
+  List<Widget> _buildMultilangDuaView(
+    MultilangDua dua,
+    AppSettings s,
+    Color textColor,
+    Color cardBg,
+    AppColors colors,
+  ) {
+    final lang = DuaLanguageService.instance;
+    final goldBorder = colors.gold.withValues(alpha: 0.45);
+    final arabicSize = s.arabicFontSize.clamp(24.0, 52.0);
+    final latinSize = s.ltrFontSize.clamp(13.0, 24.0);
+
+    Widget langChip(String label, bool active, VoidCallback onTap, Key key) {
+      return Expanded(
+        child: Material(
+          color: active ? colors.accent : colors.inputFill,
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            key: key,
+            borderRadius: BorderRadius.circular(10),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    active ? Icons.check_circle_rounded : Icons.circle_outlined,
+                    size: 13,
+                    color: active ? Colors.white : colors.textSecondary,
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: active ? Colors.white : colors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: goldBorder, width: 1.1),
+          ),
+          child: Column(
+            children: [
+              Text(
+                dua.title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  color: colors.accent,
+                ),
+              ),
+              if (dua.subtitle.isNotEmpty) ...[
+                const SizedBox(height: 3),
+                Text(
+                  dua.subtitle,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: colors.gold,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  langChip(
+                    'Arabic',
+                    lang.showArabic,
+                    lang.toggleArabic,
+                    const Key('dua_lang_arabic'),
+                  ),
+                  const SizedBox(width: 8),
+                  langChip(
+                    'Roman',
+                    lang.showRoman,
+                    lang.toggleRoman,
+                    const Key('dua_lang_roman'),
+                  ),
+                  const SizedBox(width: 8),
+                  langChip(
+                    'English',
+                    lang.showEnglish,
+                    lang.toggleEnglish,
+                    const Key('dua_lang_english'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      for (int i = 0; i < dua.verses.length; i++)
+        Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          decoration: BoxDecoration(
+            color: cardBg,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: goldBorder, width: 0.9),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              if (lang.showArabic && dua.verses[i].arabic.isNotEmpty)
+                Directionality(
+                  textDirection: TextDirection.rtl,
+                  child: Text(
+                    dua.verses[i].arabic,
+                    textAlign: TextAlign.right,
+                    style: AppTheme.arabicTextStyle(
+                      fontSize: arabicSize,
+                      height: 2.05,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+              if (lang.showRoman && dua.verses[i].roman.isNotEmpty) ...[
+                if (lang.showArabic) const SizedBox(height: 12),
+                Text(
+                  dua.verses[i].roman,
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontSize: latinSize,
+                    fontStyle: FontStyle.italic,
+                    height: 1.55,
+                    color: colors.gold,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+              if (lang.showEnglish && dua.verses[i].english.isNotEmpty) ...[
+                if (lang.showArabic || lang.showRoman) const SizedBox(height: 8),
+                Text(
+                  dua.verses[i].english,
+                  textAlign: TextAlign.left,
+                  style: TextStyle(
+                    fontSize: latinSize,
+                    height: 1.55,
+                    color: textColor.withValues(alpha: 0.88),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+    ];
   }
 }
 

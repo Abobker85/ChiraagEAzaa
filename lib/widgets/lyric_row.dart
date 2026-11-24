@@ -62,11 +62,21 @@ class LyricRow extends StatelessWidget {
                       ),
                       if (subtitle != null && subtitle!.isNotEmpty) ...[
                         const SizedBox(height: 2),
-                        Text(subtitle!,
-                            style: TextStyle(
-                              fontSize: subtitleSize,
-                              color: colors.textSecondary,
-                            )),
+                        Text(
+                          subtitle!,
+                          textDirection: AppTheme.containsArabic(subtitle!)
+                              ? TextDirection.rtl
+                              : TextDirection.ltr,
+                          style: AppTheme.containsArabic(subtitle!)
+                              ? AppTheme.arabicTextStyle(
+                                  fontSize: (subtitleSize + 2).clamp(13.0, 20.0),
+                                  color: colors.textSecondary,
+                                )
+                              : TextStyle(
+                                  fontSize: subtitleSize,
+                                  color: colors.textSecondary,
+                                ),
+                        ),
                       ],
                     ],
                   ),
