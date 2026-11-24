@@ -23,6 +23,7 @@ class QuranService extends ChangeNotifier {
   List<QuranSurah>? _surahs;
   List<QuranJuzEntry>? _juzIndex;
   final Set<String> _bookmarkedKeys = {};
+  final Set<int> _completedParas = {};
   int? _lastReadSurah;
   int? _lastReadAyah;
   bool _showRoman = true;
@@ -33,6 +34,8 @@ class QuranService extends ChangeNotifier {
   List<QuranSurah> get surahs => _surahs ?? const [];
   List<QuranJuzEntry> get juzList => _juzIndex ?? const [];
   Set<String> get bookmarkedKeys => Set.unmodifiable(_bookmarkedKeys);
+  Set<int> get completedParas => Set.unmodifiable(_completedParas);
+  bool isParaCompleted(int juz) => _completedParas.contains(juz);
   int? get lastReadSurah => _lastReadSurah;
   int? get lastReadAyah => _lastReadAyah;
   bool get showRoman => _showRoman;
@@ -164,6 +167,26 @@ class QuranService extends ChangeNotifier {
     await DatabaseService.instance.setSetting('quran_reciter', reciterId);
   }
 
+  Future<void> toggleParaCompleted(int juz) async {
+    if (juz < 1 || juz > 30) return;
+    if (_completedParas.contains(juz)) {
+      _completedParas.remove(juz);
+    } else {
+      _completedParas.add(juz);
+    }
+    notifyListeners();
+    await DatabaseService.instance.setSetting(
+      'quran_khatm_paras',
+      jsonEncode(_completedParas.toList()..sort()),
+    );
+  }
+
+  Future<void> resetKhatm() async {
+    _completedParas.clear();
+    notifyListeners();
+    await DatabaseService.instance.setSetting('quran_khatm_paras', '[]');
+  }
+
   Future<void> _loadUserState() async {
     try {
       final db = DatabaseService.instance;
@@ -186,6 +209,13 @@ class QuranService extends ChangeNotifier {
       if (enRaw != null) _showEnglish = enRaw == 'true';
       final recRaw = await db.getSetting('quran_reciter');
       if (recRaw != null && recRaw.isNotEmpty) _selectedReciterId = recRaw;
+      final khatmRaw = await db.getSetting('quran_khatm_paras');
+      if (khatmRaw != null && khatmRaw.isNotEmpty) {
+        final decoded = (jsonDecode(khatmRaw) as List<dynamic>).cast<int>();
+        _completedParas
+          ..clear()
+          ..addAll(decoded);
+      }
     } catch (e) {
       debugPrint('QuranService: error loading state: $e');
     }

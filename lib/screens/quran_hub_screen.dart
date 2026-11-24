@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/quran_models.dart';
+import '../services/database_service.dart';
 import '../services/quran_service.dart';
 import '../theme.dart';
+import 'lyric_detail_screen.dart';
 import 'quran_reader_screen.dart';
 
 /// Holy Quran Hub with Surah Wise (114), Para / Juz Wise (30), Saved Ayahs,
@@ -23,7 +25,7 @@ class _QuranHubScreenState extends State<QuranHubScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _load();
   }
 
@@ -49,6 +51,26 @@ class _QuranHubScreenState extends State<QuranHubScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _openQuranDua(String title) async {
+    final duas = await DatabaseService.instance.getLyricsByCategory('duas');
+    if (!mounted) return;
+    final idx = duas.indexWhere(
+      (d) => d.title.toLowerCase() == title.toLowerCase(),
+    );
+    if (idx >= 0) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LyricDetailScreen(
+            item: duas[idx],
+            playlist: duas,
+            initialIndex: idx,
+          ),
+        ),
+      );
+    }
   }
 
   @override
@@ -130,11 +152,12 @@ class _QuranHubScreenState extends State<QuranHubScreen>
                       ),
                       labelColor: Colors.white,
                       unselectedLabelColor: colors.textSecondary,
-                      labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
-                      unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
+                      labelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                      unselectedLabelStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                       tabs: const [
                         Tab(text: 'Surah Wise'),
                         Tab(text: 'Para Wise'),
+                        Tab(text: 'Khatm'),
                         Tab(text: 'Saved'),
                       ],
                     ),
@@ -152,6 +175,7 @@ class _QuranHubScreenState extends State<QuranHubScreen>
                       children: [
                         _buildSurahList(q, colors),
                         _buildParaList(q, colors),
+                        _buildKhatmTracker(q, colors),
                         _buildSavedList(q, colors),
                       ],
                     ),
@@ -162,16 +186,235 @@ class _QuranHubScreenState extends State<QuranHubScreen>
 
   Widget _buildSurahList(QuranService q, AppColors colors) {
     final lastSurah = q.lastReadSurah != null ? q.getSurah(q.lastReadSurah!) : null;
+    final headerCount = 1 + (lastSurah != null ? 1 : 0);
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
-      itemCount: q.surahs.length + (lastSurah != null ? 1 : 0),
+      itemCount: q.surahs.length + headerCount,
       itemBuilder: (context, index) {
-        if (lastSurah != null && index == 0) {
+        if (index == 0) {
+          return _buildQuranDuaShortcuts(colors);
+        }
+        if (lastSurah != null && index == 1) {
           return _buildContinueReadingBanner(lastSurah, q.lastReadAyah ?? 1, colors);
         }
-        final surah = q.surahs[index - (lastSurah != null ? 1 : 0)];
+        final surah = q.surahs[index - headerCount];
         return _surahTile(surah, colors);
       },
+    );
+  }
+
+  Widget _buildQuranDuaShortcuts(AppColors colors) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: InkWell(
+              key: const Key('hub_dua_before_quran'),
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _openQuranDua('Dua Before Reciting Holy Quran'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: BoxDecoration(
+                  color: colors.card,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colors.gold.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.auto_stories_rounded, size: 15, color: colors.gold),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        'Before Quran Dua',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: InkWell(
+              key: const Key('hub_dua_after_quran'),
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => _openQuranDua('Dua After Reciting Holy Quran'),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                decoration: BoxDecoration(
+                  color: colors.card,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: colors.gold.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.verified_rounded, size: 15, color: colors.gold),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        'After Quran Dua',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: colors.textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildKhatmTracker(QuranService q, AppColors colors) {
+    final done = q.completedParas.length;
+    final progress = done / 30.0;
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colors.card,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: colors.gold.withValues(alpha: 0.45)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.workspace_premium_rounded, color: colors.gold, size: 22),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Khatm-e-Quran Tracker',
+                          style: TextStyle(
+                            fontSize: 15.5,
+                            fontWeight: FontWeight.w800,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          'Tap each Para as you complete it for Isaal-e-Sawab',
+                          style: TextStyle(fontSize: 11.5, color: colors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (done > 0)
+                    TextButton(
+                      onPressed: q.resetKhatm,
+                      child: Text(
+                        'Reset',
+                        style: TextStyle(fontSize: 12, color: colors.accent),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '$done of 30 Paras Completed',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: colors.accent,
+                    ),
+                  ),
+                  Text(
+                    '${(progress * 100).round()}%',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: colors.gold,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  minHeight: 8,
+                  backgroundColor: colors.inputFill,
+                  color: colors.accent,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 5,
+            crossAxisSpacing: 8,
+            mainAxisSpacing: 8,
+            childAspectRatio: 1.05,
+          ),
+          itemCount: 30,
+          itemBuilder: (context, idx) {
+            final juz = idx + 1;
+            final isDone = q.isParaCompleted(juz);
+            return Material(
+              color: isDone ? colors.accent : colors.card,
+              borderRadius: BorderRadius.circular(12),
+              child: InkWell(
+                key: Key('khatm_para_$juz'),
+                borderRadius: BorderRadius.circular(12),
+                onTap: () => q.toggleParaCompleted(juz),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDone ? colors.accent : colors.separator,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      if (isDone)
+                        const Icon(Icons.check_rounded, size: 15, color: Colors.white),
+                      Text(
+                        'Para $juz',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: isDone ? Colors.white : colors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        ),
+      ],
     );
   }
 

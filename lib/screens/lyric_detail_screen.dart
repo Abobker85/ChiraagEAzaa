@@ -6,6 +6,7 @@ import '../models/lyric_item.dart';
 import '../services/database_service.dart';
 import '../services/dua_language_service.dart';
 import '../services/settings_service.dart';
+import '../widgets/auto_scroll_controls.dart';
 
 class LyricDetailScreen extends StatefulWidget {
   final LyricItem item;
@@ -64,6 +65,7 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
 
   // Cached content HTML per lyric ID to prevent re-fetching on swipes
   final Map<int, String?> _contentCache = {};
+  final AutoScrollController _autoScroll = AutoScrollController();
 
   @override
   void initState() {
@@ -95,6 +97,7 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
 
   @override
   void dispose() {
+    _autoScroll.dispose();
     _pageController.dispose();
     _toastEntry?.remove();
     super.dispose();
@@ -588,6 +591,21 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
               ],
             ),
             actions: [
+              AnimatedBuilder(
+                animation: _autoScroll,
+                builder: (_, __) => IconButton(
+                  key: const Key('lyric_auto_scroll_toggle'),
+                  icon: Icon(
+                    _autoScroll.isVisible
+                        ? Icons.pause_circle_filled_rounded
+                        : Icons.slow_motion_video_rounded,
+                    size: 21,
+                    color: _autoScroll.isVisible ? colors.accent : null,
+                  ),
+                  tooltip: 'Auto-Scroll Teleprompter',
+                  onPressed: _autoScroll.togglePanel,
+                ),
+              ),
               IconButton(
                 icon: const Icon(Icons.format_size_rounded, size: 21),
                 tooltip: 'Text Size',
@@ -609,23 +627,36 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
               ),
             ],
           ),
-          body: PageView.builder(
-            controller: _pageController,
-            itemCount: _playlist.length,
-            onPageChanged: (idx) {
-              setState(() {
-                _currentIndex = idx;
-              });
-            },
-            itemBuilder: (context, index) {
-              final item = _playlist[index];
-              return _LyricPageView(
-                item: item,
-                onContentLoaded: (html) {
-                  _contentCache[item.id] = html;
+          body: Stack(
+            children: [
+              PageView.builder(
+                controller: _pageController,
+                itemCount: _playlist.length,
+                onPageChanged: (idx) {
+                  _autoScroll.pause();
+                  setState(() {
+                    _currentIndex = idx;
+                  });
                 },
-              );
-            },
+                itemBuilder: (context, index) {
+                  final item = _playlist[index];
+                  return _LyricPageView(
+                    item: item,
+                    autoScroll: _autoScroll,
+                    isActive: index == _currentIndex,
+                    onContentLoaded: (html) {
+                      _contentCache[item.id] = html;
+                    },
+                  );
+                },
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 14,
+                child: Center(child: AutoScrollBar(controller: _autoScroll)),
+              ),
+            ],
           ),
           bottomNavigationBar: hasMultiple ? _buildBottomNavigationBar(colors) : null,
         );
@@ -779,10 +810,14 @@ class _ContentBlock {
 /// Internal page view rendering the content of a single recitation.
 class _LyricPageView extends StatefulWidget {
   final LyricItem item;
+  final AutoScrollController autoScroll;
+  final bool isActive;
   final ValueChanged<String?> onContentLoaded;
 
   const _LyricPageView({
     required this.item,
+    required this.autoScroll,
+    required this.isActive,
     required this.onContentLoaded,
   });
 
@@ -816,7 +851,19 @@ class _LyricPageViewState extends State<_LyricPageView> {
       }
     });
 
+    if (widget.isActive) {
+      widget.autoScroll.attach(_scrollController);
+    }
+
     _load();
+  }
+
+  @override
+  void didUpdateWidget(covariant _LyricPageView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isActive) {
+      widget.autoScroll.attach(_scrollController);
+    }
   }
 
   @override

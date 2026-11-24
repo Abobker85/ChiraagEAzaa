@@ -2,11 +2,14 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/quran_models.dart';
+import '../services/database_service.dart';
 import '../services/quran_audio_service.dart';
 import '../services/quran_service.dart';
 import '../services/settings_service.dart';
 import '../theme.dart';
+import '../widgets/auto_scroll_controls.dart';
 import '../widgets/quran_audio_bar.dart';
+import 'lyric_detail_screen.dart';
 
 class QuranReaderScreen extends StatefulWidget {
   final int initialSurahNumber;
@@ -25,6 +28,7 @@ class QuranReaderScreen extends StatefulWidget {
 class _QuranReaderScreenState extends State<QuranReaderScreen> {
   late int _surahNumber;
   final ScrollController _scrollController = ScrollController();
+  final AutoScrollController _autoScroll = AutoScrollController();
 
   // Default to authentic continuous Mushaf page layout; user can toggle to verse-by-verse.
   bool _mushafMode = true;
@@ -37,6 +41,7 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   void initState() {
     super.initState();
     _surahNumber = widget.initialSurahNumber.clamp(1, 114);
+    _autoScroll.attach(_scrollController);
     QuranService.instance.ensureLoaded().then((_) {
       if (mounted) {
         QuranService.instance.saveLastRead(_surahNumber, widget.initialAyahNumber);
@@ -47,9 +52,30 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
 
   @override
   void dispose() {
+    _autoScroll.dispose();
     _disposeRecognizers();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  Future<void> _openQuranDua(String title) async {
+    final duas = await DatabaseService.instance.getLyricsByCategory('duas');
+    if (!mounted) return;
+    final idx = duas.indexWhere(
+      (d) => d.title.toLowerCase() == title.toLowerCase(),
+    );
+    if (idx >= 0) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LyricDetailScreen(
+            item: duas[idx],
+            playlist: duas,
+            initialIndex: idx,
+          ),
+        ),
+      );
+    }
   }
 
   void _disposeRecognizers() {
@@ -455,6 +481,21 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
                     ],
                   ),
             actions: [
+              AnimatedBuilder(
+                animation: _autoScroll,
+                builder: (_, __) => IconButton(
+                  key: const Key('quran_auto_scroll_toggle'),
+                  tooltip: 'Auto-Scroll Teleprompter',
+                  icon: Icon(
+                    _autoScroll.isVisible
+                        ? Icons.pause_circle_filled_rounded
+                        : Icons.slow_motion_video_rounded,
+                    size: 21,
+                    color: _autoScroll.isVisible ? colors.accent : null,
+                  ),
+                  onPressed: _autoScroll.togglePanel,
+                ),
+              ),
               // Quick toggle between Mushaf Page and Translation View
               IconButton(
                 key: const Key('quran_view_mode_toggle'),
@@ -478,47 +519,57 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
           ),
           body: surah == null
               ? Center(child: CircularProgressIndicator(color: colors.accent))
-              : _mushafMode
-                  ? _buildMushafPageView(
-                      surah: surah,
-                      colors: colors,
-                      pageBg: cardBg,
-                      readerText: readerText,
-                      readerSub: readerSub,
-                      arabicSize: s.arabicFontSize.clamp(24.0, 52.0),
-                      audio: audio,
-                    )
-                  : ListView.builder(
-                      controller: _scrollController,
-                      padding: const EdgeInsets.fromLTRB(16, 14, 16, 80),
-                      itemCount: surah.ayahs.length + 2,
-                      itemBuilder: (context, index) {
-                        if (index == 0) {
-                          return _buildSurahHeader(surah, colors, cardBg, readerSub);
-                        }
-                        if (index == surah.ayahs.length + 1) {
-                          return _buildSurahFooterNav(colors);
-                        }
-                        final ayah = surah.ayahs[index - 1];
-                        final isSaved = q.isBookmarked(surah.number, ayah.numberInSurah);
-                        final isPlayingAyah =
-                            audio.isPlaying && audio.playingAyahGlobal == ayah.globalNumber;
-                        return _buildAyahCard(
-                          surah: surah,
-                          ayah: ayah,
-                          colors: colors,
-                          cardBg: cardBg,
-                          readerText: readerText,
-                          readerSub: readerSub,
-                          arabicSize: s.arabicFontSize.clamp(24.0, 52.0),
-                          latinSize: s.ltrFontSize.clamp(13.0, 24.0),
-                          showRoman: q.showRoman,
-                          showEnglish: q.showEnglish,
-                          isBookmarked: isSaved,
-                          isPlaying: isPlayingAyah,
-                        );
-                      },
+              : Stack(
+                  children: [
+                    _mushafMode
+                        ? _buildMushafPageView(
+                            surah: surah,
+                            colors: colors,
+                            pageBg: cardBg,
+                            readerText: readerText,
+                            readerSub: readerSub,
+                            arabicSize: s.arabicFontSize.clamp(24.0, 52.0),
+                            audio: audio,
+                          )
+                        : ListView.builder(
+                            controller: _scrollController,
+                            padding: const EdgeInsets.fromLTRB(16, 14, 16, 80),
+                            itemCount: surah.ayahs.length + 2,
+                            itemBuilder: (context, index) {
+                              if (index == 0) {
+                                return _buildSurahHeader(surah, colors, cardBg, readerSub);
+                              }
+                              if (index == surah.ayahs.length + 1) {
+                                return _buildSurahFooterNav(colors);
+                              }
+                              final ayah = surah.ayahs[index - 1];
+                              final isSaved = q.isBookmarked(surah.number, ayah.numberInSurah);
+                              final isPlayingAyah =
+                                  audio.isPlaying && audio.playingAyahGlobal == ayah.globalNumber;
+                              return _buildAyahCard(
+                                surah: surah,
+                                ayah: ayah,
+                                colors: colors,
+                                cardBg: cardBg,
+                                readerText: readerText,
+                                readerSub: readerSub,
+                                arabicSize: s.arabicFontSize.clamp(24.0, 52.0),
+                                latinSize: s.ltrFontSize.clamp(13.0, 24.0),
+                                showRoman: q.showRoman,
+                                showEnglish: q.showEnglish,
+                                isBookmarked: isSaved,
+                                isPlaying: isPlayingAyah,
+                              );
+                            },
+                          ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 12,
+                      child: Center(child: AutoScrollBar(controller: _autoScroll)),
                     ),
+                  ],
+                ),
           bottomNavigationBar: surah == null ? null : QuranAudioBar(surah: surah),
         );
       },
@@ -899,28 +950,74 @@ class _QuranReaderScreenState extends State<QuranReaderScreen> {
   Widget _buildSurahFooterNav(AppColors colors) {
     return Padding(
       padding: const EdgeInsets.only(top: 10, bottom: 20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Column(
         children: [
-          OutlinedButton.icon(
-            onPressed: _surahNumber > 1 ? () => _goToSurah(_surahNumber - 1) : null,
-            icon: const Icon(Icons.arrow_back_ios_rounded, size: 14),
-            label: const Text('Previous Surah'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: colors.accent,
-              side: BorderSide(color: colors.separator),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  key: const Key('quran_dua_before_btn'),
+                  onPressed: () => _openQuranDua('Dua Before Reciting Holy Quran'),
+                  icon: Icon(Icons.auto_stories_rounded, size: 14, color: colors.gold),
+                  label: const Text(
+                    'Before Quran Dua',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colors.textPrimary,
+                    side: BorderSide(color: colors.gold.withValues(alpha: 0.45)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: OutlinedButton.icon(
+                  key: const Key('quran_dua_after_btn'),
+                  onPressed: () => _openQuranDua('Dua After Reciting Holy Quran'),
+                  icon: Icon(Icons.verified_rounded, size: 14, color: colors.gold),
+                  label: const Text(
+                    'After Quran Dua',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 12),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: colors.textPrimary,
+                    side: BorderSide(color: colors.gold.withValues(alpha: 0.45)),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ],
           ),
-          OutlinedButton.icon(
-            onPressed: _surahNumber < 114 ? () => _goToSurah(_surahNumber + 1) : null,
-            icon: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
-            label: const Text('Next Surah'),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: colors.accent,
-              side: BorderSide(color: colors.separator),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              OutlinedButton.icon(
+                onPressed: _surahNumber > 1 ? () => _goToSurah(_surahNumber - 1) : null,
+                icon: const Icon(Icons.arrow_back_ios_rounded, size: 14),
+                label: const Text('Previous Surah'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colors.accent,
+                  side: BorderSide(color: colors.separator),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              OutlinedButton.icon(
+                onPressed: _surahNumber < 114 ? () => _goToSurah(_surahNumber + 1) : null,
+                icon: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                label: const Text('Next Surah'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: colors.accent,
+                  side: BorderSide(color: colors.separator),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
           ),
         ],
       ),

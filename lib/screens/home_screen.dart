@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models/lyric_item.dart';
 import '../services/database_service.dart';
+import '../services/islamic_calendar_service.dart';
 import 'category_screen.dart';
 import 'dua_hub_screen.dart';
+import 'lyric_detail_screen.dart';
 import 'quran_hub_screen.dart';
 import '../widgets/parents_dua_bubble.dart';
 
@@ -142,6 +144,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       _buildHeroBanner(colors),
                       const SizedBox(height: 14),
+                      _buildIslamicCalendarCard(colors),
+                      const SizedBox(height: 14),
                       _buildQuickUtilities(colors),
                       const SizedBox(height: 14),
                       _buildQuranBannerCard(colors),
@@ -159,6 +163,196 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ── Spiritual Hero Banner ──────────────────────────────────────────────────
+  Widget _buildIslamicCalendarCard(AppColors colors) {
+    final now = DateTime.now();
+    final hijri = IslamicCalendarService.toHijri(now);
+    final upcoming = IslamicCalendarService.nextOccasion(now);
+    final daily = IslamicCalendarService.dailyDua(now);
+
+    Future<void> openDuaByTitle(String title) async {
+      final duas = await DatabaseService.instance.getLyricsByCategory('duas');
+      if (!mounted) return;
+      final idx = duas.indexWhere(
+        (d) => d.title.toLowerCase() == title.toLowerCase(),
+      );
+      if (idx >= 0) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LyricDetailScreen(
+              item: duas[idx],
+              playlist: duas,
+              initialIndex: idx,
+            ),
+          ),
+        );
+      } else {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const DuaHubScreen(initialCategoryKey: 'duas'),
+          ),
+        );
+      }
+    }
+
+    return Container(
+      key: const Key('home_islamic_calendar_card'),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colors.card,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: colors.gold.withValues(alpha: 0.35), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: colors.goldSoft,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  Icons.nightlight_round,
+                  size: 16,
+                  color: colors.gold,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      hijri.formattedEn,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                        color: colors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      hijri.formattedAr,
+                      textDirection: TextDirection.rtl,
+                      style: AppTheme.arabicTextStyle(
+                        fontSize: 14,
+                        color: colors.gold,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: upcoming.isToday
+                      ? colors.accent
+                      : colors.accentSoft,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  upcoming.isToday
+                      ? 'Today'
+                      : 'In ${upcoming.daysUntil}d',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: upcoming.isToday ? Colors.white : colors.accent,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+            decoration: BoxDecoration(
+              color: colors.bg,
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  upcoming.occasion.isMourning
+                      ? Icons.brightness_2_rounded
+                      : Icons.auto_awesome_rounded,
+                  size: 15,
+                  color: upcoming.occasion.isMourning
+                      ? colors.textSecondary
+                      : colors.gold,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    upcoming.occasion.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+          InkWell(
+            key: const Key('home_daily_dua_btn'),
+            borderRadius: BorderRadius.circular(11),
+            onTap: () => openDuaByTitle(daily.duaTitle),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+              decoration: BoxDecoration(
+                color: colors.accentSoft.withValues(alpha: 0.75),
+                borderRadius: BorderRadius.circular(11),
+                border: Border.all(color: colors.accent.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.menu_book_rounded, size: 16, color: colors.accent),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${daily.dayLabel}: ${daily.duaTitle}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w700,
+                            color: colors.accent,
+                          ),
+                        ),
+                        Text(
+                          daily.subtitle,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: colors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Icon(Icons.chevron_right_rounded, size: 18, color: colors.accent),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeroBanner(AppColors colors) {
     return Container(
       decoration: BoxDecoration(
