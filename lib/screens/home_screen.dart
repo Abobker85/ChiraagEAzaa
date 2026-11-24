@@ -149,9 +149,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildQuickUtilities(colors),
                       const SizedBox(height: 14),
                       _buildQuranBannerCard(colors),
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 18),
                       ..._buildFeaturedSection(colors),
-                      const SizedBox(height: 22),
+                      const SizedBox(height: 16),
                       ..._buildOtherCollectionsSection(colors),
                     ],
                   ),
@@ -732,6 +732,7 @@ class _HomeScreenState extends State<HomeScreen> {
       const SizedBox(height: 10),
       GridView.builder(
         shrinkWrap: true,
+        padding: EdgeInsets.zero,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: featured.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(

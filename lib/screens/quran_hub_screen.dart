@@ -369,6 +369,7 @@ class _QuranHubScreenState extends State<QuranHubScreen>
         const SizedBox(height: 14),
         GridView.builder(
           shrinkWrap: true,
+          padding: EdgeInsets.zero,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 5,
