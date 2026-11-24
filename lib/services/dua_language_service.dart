@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'database_service.dart';
 
 class DuaVerse {
   final String arabic;
@@ -68,11 +69,57 @@ class DuaLanguageService extends ChangeNotifier {
         final dua = MultilangDua.fromJson(item as Map<String, dynamic>);
         _byNormalizedTitle[_norm(dua.title)] = dua;
       }
+      // Also load any user-submitted custom Duas persisted in SQLite settings
+      final customRaw = await DatabaseService.instance
+          .getSetting(DatabaseService.customDuasSettingKey);
+      if (customRaw != null && customRaw.isNotEmpty) {
+        final customList = jsonDecode(customRaw) as List<dynamic>;
+        for (final entry in customList) {
+          final m = entry as Map<String, dynamic>;
+          registerCustomDua(
+            title: m['title'] as String? ?? '',
+            subtitle: m['subtitle'] as String? ?? '',
+            arabic: m['arabic'] as String? ?? '',
+            roman: m['roman'] as String? ?? '',
+            english: m['english'] as String? ?? '',
+            notify: false,
+          );
+        }
+      }
       _loaded = true;
       notifyListeners();
     } catch (e) {
       debugPrint('DuaLanguageService: failed to load duas_multilang.json: $e');
     }
+  }
+
+  void registerCustomDua({
+    required String title,
+    String subtitle = '',
+    String arabic = '',
+    String roman = '',
+    String english = '',
+    bool notify = true,
+  }) {
+    final cleanTitle = title.trim();
+    if (cleanTitle.isEmpty) return;
+    _byNormalizedTitle[_norm(cleanTitle)] = MultilangDua(
+      title: cleanTitle,
+      subtitle: subtitle.trim().isEmpty ? 'Custom Dua' : subtitle.trim(),
+      verses: [
+        DuaVerse(
+          arabic: arabic.trim(),
+          roman: roman.trim(),
+          english: english.trim(),
+        ),
+      ],
+    );
+    if (notify) notifyListeners();
+  }
+
+  void unregisterCustomDua(String title) {
+    _byNormalizedTitle.remove(_norm(title));
+    notifyListeners();
   }
 
   MultilangDua? getByTitle(String title) => _byNormalizedTitle[_norm(title)];

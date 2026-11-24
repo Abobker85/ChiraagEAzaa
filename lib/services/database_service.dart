@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/services.dart';
@@ -18,6 +19,10 @@ class DatabaseService {
 
   static const _dbName = 'chiraag_e_azaa.db';
   static const _dbVersion = 2; // bump when shipping a new DB asset
+  static const int customDuaMinId = 900000;
+  static const String customDuasSettingKey = 'custom_duas_v1';
+
+  static bool isCustomDuaId(int id) => id >= customDuaMinId;
 
   // ── Init ──────────────────────────────────────────────────────────────
   Future<Database> get db async {
@@ -92,6 +97,7 @@ class DatabaseService {
           for (final s in savedSettings) {
             await upgraded.insert('settings', s, conflictAlgorithm: ConflictAlgorithm.replace);
           }
+          await _reinjectCustomDuas(upgraded);
           await upgraded.close();
         } catch (e) {
           debugPrint('DatabaseService: restore user data warning: $e');
@@ -325,5 +331,163 @@ class DatabaseService {
     final d = await db;
     await d.insert('settings', {'key': key, 'value': value},
         conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  // ── Custom User Duas (saved in DB + FTS index + preserved on upgrades) ─
+  static String _buildCustomDuaHtml({
+    required String subtitle,
+    required String arabic,
+    required String roman,
+    required String english,
+  }) {
+    final buf = StringBuffer();
+    if (subtitle.trim().isNotEmpty) {
+      buf.writeln('<p>${subtitle.trim()}</p>');
+    }
+    if (arabic.trim().isNotEmpty) {
+      buf.writeln('<p>${arabic.trim()}</p>');
+    }
+    if (roman.trim().isNotEmpty) {
+      buf.writeln('<p>${roman.trim()}</p>');
+    }
+    if (english.trim().isNotEmpty) {
+      buf.writeln('<p>${english.trim()}</p>');
+    }
+    return buf.toString().trim();
+  }
+
+  Future<void> _reinjectCustomDuas(Database targetDb) async {
+    try {
+      final rows = await targetDb.query(
+        'settings',
+        where: 'key = ?',
+        whereArgs: [customDuasSettingKey],
+        limit: 1,
+      );
+      if (rows.isEmpty) return;
+      final raw = rows.first['value'] as String? ?? '';
+      if (raw.isEmpty) return;
+      final list = jsonDecode(raw) as List<dynamic>;
+      for (final entry in list) {
+        final m = entry as Map<String, dynamic>;
+        final id = (m['id'] as num).toInt();
+        final cat = m['categoryKey'] as String? ?? 'duas';
+        final title = m['title'] as String? ?? '';
+        final html = _buildCustomDuaHtml(
+          subtitle: m['subtitle'] as String? ?? '',
+          arabic: m['arabic'] as String? ?? '',
+          roman: m['roman'] as String? ?? '',
+          english: m['english'] as String? ?? '',
+        );
+        await targetDb.insert(
+          'lyrics',
+          {
+            'id': id,
+            'category_key': cat,
+            'artist_id': null,
+            'year': null,
+            'title': title,
+            'content_html': html,
+            'is_rtl': (m['arabic'] as String? ?? '').trim().isNotEmpty ? 1 : 0,
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+      await targetDb.execute("INSERT INTO lyrics_fts(lyrics_fts) VALUES('rebuild')");
+    } catch (e) {
+      debugPrint('DatabaseService: reinject custom duas error: $e');
+    }
+  }
+
+  Future<LyricItem> addCustomDua({
+    required String categoryKey,
+    required String title,
+    String subtitle = '',
+    String arabic = '',
+    String roman = '',
+    String english = '',
+  }) async {
+    final d = await db;
+    final cleanTitle = title.trim();
+    final cleanSub = subtitle.trim();
+    final cleanAr = arabic.trim();
+    final cleanRo = roman.trim();
+    final cleanEn = english.trim();
+
+    final maxRows = await d.rawQuery(
+      'SELECT MAX(id) AS max_id FROM lyrics WHERE id >= ?',
+      [customDuaMinId],
+    );
+    final currentMax = maxRows.first['max_id'] as int?;
+    final nextId = (currentMax == null) ? customDuaMinId : currentMax + 1;
+    final html = _buildCustomDuaHtml(
+      subtitle: cleanSub,
+      arabic: cleanAr,
+      roman: cleanRo,
+      english: cleanEn,
+    );
+    final isRtl = cleanAr.isNotEmpty ? 1 : 0;
+
+    await d.insert(
+      'lyrics',
+      {
+        'id': nextId,
+        'category_key': categoryKey,
+        'artist_id': null,
+        'year': null,
+        'title': cleanTitle,
+        'content_html': html,
+        'is_rtl': isRtl,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+    await d.execute(
+      'INSERT INTO lyrics_fts(rowid, title) VALUES(?, ?)',
+      [nextId, cleanTitle],
+    );
+
+    // Persist in settings so it survives future DB asset upgrades
+    final existingRaw = await getSetting(customDuasSettingKey);
+    final list = (existingRaw != null && existingRaw.isNotEmpty)
+        ? List<Map<String, dynamic>>.from(
+            (jsonDecode(existingRaw) as List<dynamic>)
+                .map((e) => Map<String, dynamic>.from(e as Map)),
+          )
+        : <Map<String, dynamic>>[];
+
+    list.add({
+      'id': nextId,
+      'categoryKey': categoryKey,
+      'title': cleanTitle,
+      'subtitle': cleanSub,
+      'arabic': cleanAr,
+      'roman': cleanRo,
+      'english': cleanEn,
+    });
+    await setSetting(customDuasSettingKey, jsonEncode(list));
+
+    return LyricItem(
+      id: nextId,
+      categoryKey: categoryKey,
+      title: cleanTitle,
+      isRtl: isRtl == 1,
+    );
+  }
+
+  Future<void> deleteCustomDua(int id) async {
+    if (!isCustomDuaId(id)) return;
+    final d = await db;
+    await d.delete('lyrics', where: 'id = ?', whereArgs: [id]);
+    await removeBookmark(id);
+    await d.execute("INSERT INTO lyrics_fts(lyrics_fts) VALUES('rebuild')");
+
+    final existingRaw = await getSetting(customDuasSettingKey);
+    if (existingRaw != null && existingRaw.isNotEmpty) {
+      final list = List<Map<String, dynamic>>.from(
+        (jsonDecode(existingRaw) as List<dynamic>)
+            .map((e) => Map<String, dynamic>.from(e as Map)),
+      )..removeWhere((m) => (m['id'] as num?)?.toInt() == id);
+      await setSetting(customDuasSettingKey, jsonEncode(list));
+    }
   }
 }

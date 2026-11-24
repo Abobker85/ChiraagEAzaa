@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../theme.dart';
 import '../models/lyric_item.dart';
 import '../services/database_service.dart';
+import '../services/dua_language_service.dart';
+import 'add_custom_dua_screen.dart';
 import 'lyric_detail_screen.dart';
 
 /// Unified Spiritual Portal for Duas, Ziyaraat, and Munajaat with tabbed navigation.
@@ -111,6 +113,33 @@ class _DuaHubScreenState extends State<DuaHubScreen>
     }).toList();
   }
 
+  Future<void> _openAddCustomDua() async {
+    final currentKey = _tabs[_tabController.index].key;
+    final saved = await Navigator.push<LyricItem>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AddCustomDuaScreen(initialCategoryKey: currentKey),
+      ),
+    );
+    if (saved != null && mounted) {
+      await _loadAllCategories();
+      final targetTabIdx = _tabs.indexWhere((t) => t.key == saved.categoryKey);
+      if (targetTabIdx >= 0 && targetTabIdx != _tabController.index) {
+        _tabController.animateTo(targetTabIdx);
+      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Saved "${saved.title}" to index')),
+      );
+    }
+  }
+
+  Future<void> _deleteCustomDua(LyricItem item) async {
+    await DatabaseService.instance.deleteCustomDua(item.id);
+    DuaLanguageService.instance.unregisterCustomDua(item.title);
+    await _loadAllCategories();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
@@ -135,6 +164,19 @@ class _DuaHubScreenState extends State<DuaHubScreen>
           ),
         ),
         actions: [
+          TextButton.icon(
+            key: const Key('dua_hub_add_custom_btn'),
+            onPressed: _openAddCustomDua,
+            icon: Icon(Icons.add_circle_outline_rounded, size: 18, color: colors.accent),
+            label: Text(
+              'Add Dua',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: colors.accent,
+              ),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh_rounded, size: 20),
             tooltip: 'Reload Recitations',
@@ -212,11 +254,11 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                   labelColor: Colors.white,
                   unselectedLabelColor: colors.textSecondary,
                   labelStyle: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
                   unselectedLabelStyle: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                   tabs: _tabs.map((tab) {
@@ -225,15 +267,21 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(tab.iconData, size: 16),
-                          const SizedBox(width: 6),
-                          Text(tab.title),
+                          Icon(tab.iconData, size: 14),
+                          const SizedBox(width: 4),
+                          Flexible(
+                            child: Text(
+                              tab.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
                           if (count > 0) ...[
-                            const SizedBox(width: 5),
+                            const SizedBox(width: 4),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 1.5,
+                                horizontal: 5,
+                                vertical: 1,
                               ),
                               decoration: BoxDecoration(
                                 color: _tabs[_tabController.index].key == tab.key
@@ -481,6 +529,33 @@ class _DuaHubScreenState extends State<DuaHubScreen>
                     ],
                   ),
                 ),
+                if (DatabaseService.isCustomDuaId(item.id)) ...[
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: colors.goldSoft,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'Custom',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: colors.gold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    visualDensity: VisualDensity.compact,
+                    tooltip: 'Delete Custom Dua',
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      size: 18,
+                      color: colors.textSecondary,
+                    ),
+                    onPressed: () => _deleteCustomDua(item),
+                  ),
+                ],
                 if (isSaved)
                   Padding(
                     padding: const EdgeInsets.only(right: 6),

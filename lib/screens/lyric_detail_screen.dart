@@ -877,7 +877,8 @@ class _LyricPageViewState extends State<_LyricPageView> {
     final detail = await DatabaseService.instance.getLyricDetail(widget.item.id);
     if (!mounted) return;
     final raw = detail?.contentHtml;
-    final multilang = widget.item.categoryKey == 'duas'
+    final catKey = widget.item.categoryKey.split('/').first;
+    final multilang = (catKey == 'duas' || catKey == 'ziyaraat' || catKey == 'munaejaat')
         ? DuaLanguageService.instance.getByTitle(widget.item.title)
         : null;
     final blocks = raw != null && _isRtl ? _parseBlocks(raw) : <_ContentBlock>[];
