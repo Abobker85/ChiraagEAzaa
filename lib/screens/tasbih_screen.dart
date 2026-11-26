@@ -75,6 +75,7 @@ class _TasbihScreenState extends State<TasbihScreen>
   int _presetIdx = 0;
   int _fatimaStage = 0;
   int _count = 0;
+  int _roundsCompleted = 0;
   late AnimationController _anim;
   late Animation<double> _scale;
 
@@ -142,8 +143,15 @@ class _TasbihScreenState extends State<TasbihScreen>
               ? 'Tasbih Bibi Fatima Zahra (S.A.) complete'
               : '$_target complete',
         );
+        setState(() => _roundsCompleted++);
       }
     }
+  }
+
+  void _undo() {
+    if (_count <= 0) return;
+    HapticFeedback.selectionClick();
+    setState(() => _count--);
   }
 
   void _reset() {
@@ -201,13 +209,29 @@ class _TasbihScreenState extends State<TasbihScreen>
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final heroGradient = isDark
+        ? const [Color(0xFF0E2915), Color(0xFF174523)]
+        : const [Color(0xFF0D3B18), Color(0xFF1A5C28)];
+    final remaining = (_target - _count).clamp(0, _target);
 
     return Scaffold(
       backgroundColor: colors.bg,
       appBar: AppBar(
         backgroundColor: colors.card,
+        foregroundColor: colors.textPrimary,
+        scrolledUnderElevation: 0,
+        elevation: 0,
         title: const Text('Digital Tasbih'),
         actions: [
+          IconButton(
+            tooltip: 'Undo Last Tap',
+            icon: Icon(
+              Icons.undo_rounded,
+              color: _count > 0 ? colors.accent : colors.textTertiary,
+            ),
+            onPressed: _count > 0 ? _undo : null,
+          ),
           IconButton(
             tooltip: 'Reset Counter',
             icon: Icon(Icons.refresh_rounded, color: colors.accent),
@@ -216,7 +240,7 @@ class _TasbihScreenState extends State<TasbihScreen>
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(18, 14, 18, 110),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
         child: Column(
           children: [
             // Preset selector chips
@@ -252,19 +276,169 @@ class _TasbihScreenState extends State<TasbihScreen>
                 },
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
 
-            // Main Tasbih Card with bead-ring dial
+            // Emerald Sanctuary Dhikr Hero Card
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 20, 20, 26),
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: heroGradient,
+                ),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(
+                  color: AppTheme.gold.withValues(alpha: 0.38),
+                  width: 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF0D3B18).withValues(alpha: isDark ? 0.35 : 0.16),
+                    blurRadius: 14,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppTheme.gold.withValues(alpha: 0.22),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
+                              color: AppTheme.gold.withValues(alpha: 0.45),
+                              width: 0.8,
+                            ),
+                          ),
+                          child: Text(
+                            _preset.isFatimaSequence
+                                ? 'Tasbih Bibi Fatima Zahra (S.A.)'
+                                : _preset.transliteration ?? 'Sacred Dhikr',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFF6DF96),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.13),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          'Target $_target',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_currentArabic.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      _currentArabic,
+                      textDirection: TextDirection.rtl,
+                      textAlign: TextAlign.center,
+                      style: AppTheme.arabicTextStyle(
+                        fontSize: 34,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  Text(
+                    _currentLatin,
+                    style: const TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFFE7EFEA),
+                    ),
+                  ),
+                  if (_preset.isFatimaSequence) ...[
+                    const SizedBox(height: 14),
+                    Row(
+                      children: List.generate(_fatimaStages.length, (i) {
+                        final st = _fatimaStages[i];
+                        final isCurrent = i == _fatimaStage;
+                        final isDone = i < _fatimaStage;
+                        return Expanded(
+                          child: Container(
+                            margin: EdgeInsets.only(right: i < 2 ? 6 : 0),
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+                            decoration: BoxDecoration(
+                              color: isCurrent
+                                  ? const Color(0xFFE7C462)
+                                  : Colors.white.withValues(alpha: isDone ? 0.18 : 0.10),
+                              borderRadius: BorderRadius.circular(11),
+                              border: Border.all(
+                                color: isCurrent
+                                    ? const Color(0xFFF6DF96)
+                                    : Colors.white.withValues(alpha: 0.14),
+                              ),
+                            ),
+                            child: Column(
+                              children: [
+                                Text(
+                                  '${st.target}',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w800,
+                                    color: isCurrent ? const Color(0xFF122616) : Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  st.latin,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
+                                    color: isCurrent
+                                        ? const Color(0xFF122616)
+                                        : Colors.white.withValues(alpha: 0.85),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // Main Tactile Bead-Ring Dial Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(18, 22, 18, 20),
               decoration: BoxDecoration(
                 color: colors.card,
                 borderRadius: BorderRadius.circular(24),
                 border: Border.all(color: colors.separator),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.04),
+                    color: Colors.black.withValues(alpha: isDark ? 0.24 : 0.04),
                     blurRadius: 16,
                     offset: const Offset(0, 6),
                   ),
@@ -272,85 +446,14 @@ class _TasbihScreenState extends State<TasbihScreen>
               ),
               child: Column(
                 children: [
-                  if (_preset.isFatimaSequence)
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      decoration: BoxDecoration(
-                        color: colors.goldSoft,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: colors.gold.withValues(alpha: 0.35),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Text(
-                            'Tasbih Bibi Fatima Zahra (S.A.)',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: colors.gold,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '34 Allahu Akbar · 33 Alhamdulillah · 33 SubhanAllah',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              color: colors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                  // Current Dhikr title + Arabic calligraphy
-                  Text(
-                    _currentLatin,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: colors.accent,
-                    ),
-                  ),
-                  if (_currentArabic.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      _currentArabic,
-                      textDirection: TextDirection.rtl,
-                      textAlign: TextAlign.center,
-                      style: AppTheme.arabicTextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textPrimary,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 4),
-                  Text(
-                    'Target: $_target',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colors.textSecondary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Circular Bead-Ring + Central Tactile Counter Button
                   SizedBox(
-                    width: 248,
-                    height: 248,
+                    width: 244,
+                    height: 244,
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
                         CustomPaint(
-                          size: const Size(248, 248),
+                          size: const Size(244, 244),
                           painter: _BeadRingPainter(
                             totalBeads: _beadCount,
                             completedBeads: _completedBeads,
@@ -363,19 +466,19 @@ class _TasbihScreenState extends State<TasbihScreen>
                           child: GestureDetector(
                             onTap: _tap,
                             child: Container(
-                              width: 176,
-                              height: 176,
+                              width: 174,
+                              height: 174,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 color: colors.paperBg,
                                 border: Border.all(
-                                  color: colors.gold.withValues(alpha: 0.55),
+                                  color: colors.gold.withValues(alpha: 0.6),
                                   width: 2,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: colors.accent.withValues(alpha: 0.14),
-                                    blurRadius: 20,
+                                    blurRadius: 18,
                                     offset: const Offset(0, 6),
                                   ),
                                 ],
@@ -386,9 +489,9 @@ class _TasbihScreenState extends State<TasbihScreen>
                                   Text(
                                     'COUNT',
                                     style: TextStyle(
-                                      fontSize: 11,
+                                      fontSize: 10.5,
                                       letterSpacing: 1.4,
-                                      fontWeight: FontWeight.w600,
+                                      fontWeight: FontWeight.w700,
                                       color: colors.textTertiary,
                                     ),
                                   ),
@@ -399,15 +502,23 @@ class _TasbihScreenState extends State<TasbihScreen>
                                       fontSize: 54,
                                       fontWeight: FontWeight.w700,
                                       color: colors.accent,
-                                      height: 1.1,
+                                      height: 1.05,
                                     ),
                                   ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Tap to recite',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: colors.textSecondary,
+                                  const SizedBox(height: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: colors.accentSoft,
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Text(
+                                      'Tap to recite',
+                                      style: TextStyle(
+                                        fontSize: 11.5,
+                                        fontWeight: FontWeight.w600,
+                                        color: colors.accent,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -417,6 +528,58 @@ class _TasbihScreenState extends State<TasbihScreen>
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _count > 0 ? _undo : null,
+                        icon: const Icon(Icons.undo_rounded, size: 15),
+                        label: const Text('Undo'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colors.textPrimary,
+                          side: BorderSide(color: colors.separator),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: colors.goldSoft,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: colors.gold.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        child: Text(
+                          _roundsCompleted > 0
+                              ? '$_roundsCompleted ${_roundsCompleted == 1 ? 'round' : 'rounds'} done'
+                              : '$remaining left in stage',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: isDark ? const Color(0xFFE7C76E) : const Color(0xFF705310),
+                          ),
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _reset,
+                        icon: const Icon(Icons.refresh_rounded, size: 15),
+                        label: const Text('Reset'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colors.accent,
+                          side: BorderSide(color: colors.accent.withValues(alpha: 0.4)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),

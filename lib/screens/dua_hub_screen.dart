@@ -156,6 +156,7 @@ class DuaHubScreenState extends State<DuaHubScreen>
       appBar: AppBar(
         scrolledUnderElevation: 0,
         backgroundColor: colors.card,
+        foregroundColor: colors.textPrimary,
         elevation: 0,
         leading: Navigator.canPop(context)
             ? IconButton(
@@ -164,7 +165,7 @@ class DuaHubScreenState extends State<DuaHubScreen>
               )
             : null,
         title: Text(
-          'Dua & Spiritual Portal',
+          'Duas & Devotions',
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w700,
@@ -172,16 +173,26 @@ class DuaHubScreenState extends State<DuaHubScreen>
           ),
         ),
         actions: [
-          TextButton.icon(
-            key: const Key('dua_hub_add_custom_btn'),
-            onPressed: _openAddCustomDua,
-            icon: Icon(Icons.add_circle_outline_rounded, size: 18, color: colors.accent),
-            label: Text(
-              'Add Dua',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w700,
-                color: colors.accent,
+          Padding(
+            padding: const EdgeInsets.only(right: 4),
+            child: TextButton.icon(
+              key: const Key('dua_hub_add_custom_btn'),
+              onPressed: _openAddCustomDua,
+              style: TextButton.styleFrom(
+                backgroundColor: colors.accentSoft,
+                foregroundColor: colors.accent,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              icon: const Icon(Icons.add_rounded, size: 16),
+              label: const Text(
+                'Add Dua',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
           ),
@@ -192,7 +203,7 @@ class DuaHubScreenState extends State<DuaHubScreen>
           ),
         ],
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(114),
+          preferredSize: const Size.fromHeight(112),
           child: Column(
             children: [
               // Real-time Search input
@@ -210,7 +221,7 @@ class DuaHubScreenState extends State<DuaHubScreen>
                     onChanged: (val) => setState(() => _searchQuery = val),
                     style: TextStyle(fontSize: 13.5, color: colors.textPrimary),
                     decoration: InputDecoration(
-                      hintText: 'Search recitations in current tab...',
+                      hintText: 'Search Duas, Ziyaraat or Munajaat...',
                       hintStyle: TextStyle(
                         fontSize: 13,
                         color: colors.textTertiary,
@@ -236,10 +247,11 @@ class DuaHubScreenState extends State<DuaHubScreen>
                 ),
               ),
               const SizedBox(height: 4),
-              // Segmented TabBar
+              // Untruncated Segmented TabBar (text + count chip, no icon squeezing)
               Container(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-                height: 44,
+                padding: const EdgeInsets.all(3),
+                height: 42,
                 decoration: BoxDecoration(
                   color: colors.inputFill,
                   borderRadius: BorderRadius.circular(14),
@@ -247,13 +259,15 @@ class DuaHubScreenState extends State<DuaHubScreen>
                 ),
                 child: TabBar(
                   controller: _tabController,
+                  dividerColor: Colors.transparent,
+                  labelPadding: const EdgeInsets.symmetric(horizontal: 4),
                   indicatorSize: TabBarIndicatorSize.tab,
                   indicator: BoxDecoration(
                     color: colors.accent,
-                    borderRadius: BorderRadius.circular(11),
+                    borderRadius: BorderRadius.circular(10),
                     boxShadow: [
                       BoxShadow(
-                        color: colors.accent.withValues(alpha: 0.25),
+                        color: colors.accent.withValues(alpha: 0.22),
                         blurRadius: 6,
                         offset: const Offset(0, 2),
                       ),
@@ -262,38 +276,36 @@ class DuaHubScreenState extends State<DuaHubScreen>
                   labelColor: Colors.white,
                   unselectedLabelColor: colors.textSecondary,
                   labelStyle: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                   ),
                   unselectedLabelStyle: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
                   ),
                   tabs: _tabs.map((tab) {
                     final count = _cache[tab.key]?.length ?? 0;
+                    final selected = _tabs[_tabController.index].key == tab.key;
                     return Tab(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(tab.iconData, size: 14),
-                          const SizedBox(width: 4),
-                          Flexible(
-                            child: Text(
-                              tab.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
+                          Text(
+                            tab.title,
+                            maxLines: 1,
+                            softWrap: false,
                           ),
                           if (count > 0) ...[
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 5),
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 5,
                                 vertical: 1,
                               ),
                               decoration: BoxDecoration(
-                                color: _tabs[_tabController.index].key == tab.key
-                                    ? Colors.white.withValues(alpha: 0.25)
+                                color: selected
+                                    ? Colors.white.withValues(alpha: 0.22)
                                     : colors.accentSoft,
                                 borderRadius: BorderRadius.circular(8),
                               ),
@@ -302,9 +314,7 @@ class DuaHubScreenState extends State<DuaHubScreen>
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
-                                  color: _tabs[_tabController.index].key == tab.key
-                                      ? Colors.white
-                                      : colors.accent,
+                                  color: selected ? Colors.white : colors.accent,
                                 ),
                               ),
                             ),
@@ -391,30 +401,47 @@ class DuaHubScreenState extends State<DuaHubScreen>
   }
 
   Widget _buildHeaderInfoCard(_DuaTabDefinition tab, int count, AppColors colors) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final gradient = isDark
+        ? const [Color(0xFF0E2915), Color(0xFF174523)]
+        : const [Color(0xFF0D3B18), Color(0xFF1A5C28)];
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
-        color: colors.accentSoft,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: colors.accentBadge,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: gradient,
         ),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: AppTheme.gold.withValues(alpha: 0.36),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0D3B18).withValues(alpha: isDark ? 0.32 : 0.14),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 34,
-            height: 34,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
-              color: colors.card,
-              borderRadius: BorderRadius.circular(9),
+              color: AppTheme.gold.withValues(alpha: 0.22),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: colors.gold.withValues(alpha: 0.3),
+                color: AppTheme.gold.withValues(alpha: 0.45),
               ),
             ),
             child: Center(
-              child: Icon(tab.iconData, size: 18, color: colors.accent),
+              child: Icon(tab.iconData, size: 20, color: const Color(0xFFF6DF96)),
             ),
           ),
           const SizedBox(width: 12),
@@ -426,16 +453,18 @@ class DuaHubScreenState extends State<DuaHubScreen>
                   tab.urduTitle,
                   textDirection: TextDirection.rtl,
                   style: AppTheme.arabicTextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.bold,
-                    color: colors.accent,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    color: Colors.white,
+                    height: 1.3,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  'Swipe between pages while reading • $count recitations',
+                  'Swipe between pages while reading · $count recitations',
                   style: TextStyle(
-                    fontSize: 11,
-                    color: colors.textSecondary,
+                    fontSize: 11.5,
+                    color: const Color(0xFFE7EFEA).withValues(alpha: 0.88),
                   ),
                 ),
               ],
@@ -454,18 +483,24 @@ class DuaHubScreenState extends State<DuaHubScreen>
     required int totalCount,
   }) {
     final isSaved = SavedManager.instance.isSaved(item.id);
+    final isArabicTitle = AppTheme.containsArabic(item.title);
+    final indexLabel = (index + 1).toString().padLeft(2, '0');
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: colors.card,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: colors.separator),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: isSaved
+              ? colors.accent.withValues(alpha: 0.35)
+              : colors.separator,
+        ),
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(15),
           onTap: () async {
             await Navigator.push(
               context,
@@ -484,20 +519,19 @@ class DuaHubScreenState extends State<DuaHubScreen>
             child: Row(
               children: [
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 34,
+                  height: 34,
                   decoration: BoxDecoration(
-                    color: colors.bg,
-                    borderRadius: BorderRadius.circular(9),
-                    border: Border.all(color: colors.separator),
+                    color: colors.accentSoft,
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Center(
                     child: Text(
-                      '${index + 1}',
+                      indexLabel,
                       style: TextStyle(
                         fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                        color: colors.textSecondary,
+                        fontWeight: FontWeight.w800,
+                        color: colors.accent,
                       ),
                     ),
                   ),
@@ -505,17 +539,16 @@ class DuaHubScreenState extends State<DuaHubScreen>
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment:
+                        isArabicTitle ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                     children: [
                       Text(
                         item.title,
-                        textDirection: AppTheme.containsArabic(item.title)
-                            ? TextDirection.rtl
-                            : TextDirection.ltr,
-                        style: AppTheme.containsArabic(item.title)
+                        textDirection: isArabicTitle ? TextDirection.rtl : TextDirection.ltr,
+                        style: isArabicTitle
                             ? AppTheme.arabicTextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
                                 color: colors.textPrimary,
                               )
                             : TextStyle(
@@ -537,6 +570,7 @@ class DuaHubScreenState extends State<DuaHubScreen>
                     ],
                   ),
                 ),
+                const SizedBox(width: 8),
                 if (DatabaseService.isCustomDuaId(item.id)) ...[
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
