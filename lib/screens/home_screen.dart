@@ -3,16 +3,23 @@ import '../theme.dart';
 import '../models/lyric_item.dart';
 import '../services/database_service.dart';
 import '../services/islamic_calendar_service.dart';
+import '../services/user_data_service.dart';
 import 'category_screen.dart';
 import 'dua_hub_screen.dart';
 import 'lyric_detail_screen.dart';
 import 'quran_hub_screen.dart';
+import 'shia_calendar_screen.dart';
 import '../widgets/parents_dua_bubble.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onSelectTab;
+  final ValueChanged<String>? onOpenDuaCategory;
 
-  const HomeScreen({super.key, this.onSelectTab});
+  const HomeScreen({
+    super.key,
+    this.onSelectTab,
+    this.onOpenDuaCategory,
+  });
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -48,6 +55,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    UserDataService.instance.ensureLoaded();
     _loadCategories();
   }
 
@@ -149,6 +157,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       _buildQuickUtilities(colors),
                       const SizedBox(height: 14),
                       _buildQuranBannerCard(colors),
+                      _buildRecentlyReadSection(colors),
                       const SizedBox(height: 18),
                       ..._buildFeaturedSection(colors),
                       const SizedBox(height: 16),
@@ -207,95 +216,109 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: colors.goldSoft,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.nightlight_round,
-                  size: 16,
-                  color: colors.gold,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          InkWell(
+            key: const Key('home_open_calendar_btn'),
+            borderRadius: BorderRadius.circular(11),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const ShiaCalendarScreen()),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      hijri.formattedEn,
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w800,
-                        color: colors.textPrimary,
+                    Container(
+                      padding: const EdgeInsets.all(7),
+                      decoration: BoxDecoration(
+                        color: colors.goldSoft,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(
+                        Icons.nightlight_round,
+                        size: 16,
+                        color: colors.gold,
                       ),
                     ),
-                    Text(
-                      hijri.formattedAr,
-                      textDirection: TextDirection.rtl,
-                      style: AppTheme.arabicTextStyle(
-                        fontSize: 14,
-                        color: colors.gold,
-                        height: 1.3,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            hijri.formattedEn,
+                            style: TextStyle(
+                              fontSize: 13.5,
+                              fontWeight: FontWeight.w800,
+                              color: colors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            hijri.formattedAr,
+                            textDirection: TextDirection.rtl,
+                            style: AppTheme.arabicTextStyle(
+                              fontSize: 14,
+                              color: colors.gold,
+                              height: 1.3,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: upcoming.isToday
+                            ? colors.accent
+                            : colors.accentSoft,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        upcoming.isToday
+                            ? 'Today'
+                            : 'In ${upcoming.daysUntil}d',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: upcoming.isToday ? Colors.white : colors.accent,
+                        ),
                       ),
                     ),
                   ],
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: upcoming.isToday
-                      ? colors.accent
-                      : colors.accentSoft,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  upcoming.isToday
-                      ? 'Today'
-                      : 'In ${upcoming.daysUntil}d',
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                    color: upcoming.isToday ? Colors.white : colors.accent,
+                const SizedBox(height: 10),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: colors.bg,
+                    borderRadius: BorderRadius.circular(11),
                   ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-            decoration: BoxDecoration(
-              color: colors.bg,
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  upcoming.occasion.isMourning
-                      ? Icons.brightness_2_rounded
-                      : Icons.auto_awesome_rounded,
-                  size: 15,
-                  color: upcoming.occasion.isMourning
-                      ? colors.textSecondary
-                      : colors.gold,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    upcoming.occasion.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: colors.textPrimary,
-                    ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        upcoming.occasion.isMourning
+                            ? Icons.brightness_2_rounded
+                            : Icons.auto_awesome_rounded,
+                        size: 15,
+                        color: upcoming.occasion.isMourning
+                            ? colors.textSecondary
+                            : colors.gold,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          upcoming.occasion.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: colors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      Icon(Icons.calendar_month_rounded, size: 15, color: colors.accent),
+                    ],
                   ),
                 ),
               ],
@@ -350,6 +373,106 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRecentlyReadSection(AppColors colors) {
+    return AnimatedBuilder(
+      animation: UserDataService.instance,
+      builder: (context, _) {
+        final recent = UserDataService.instance.recent;
+        if (recent.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(top: 16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.history_rounded, size: 16, color: colors.accent),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Recently Read',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 66,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: recent.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, idx) {
+                    final entry = recent[idx];
+                    final isAr = entry.isRtl || AppTheme.containsArabic(entry.title);
+                    return Material(
+                      color: colors.card,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        side: BorderSide(color: colors.separator),
+                      ),
+                      clipBehavior: Clip.antiAlias,
+                      child: InkWell(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => LyricDetailScreen(
+                              item: entry.toLyricItem(),
+                            ),
+                          ),
+                        ),
+                        child: Container(
+                          width: 175,
+                          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                entry.title,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
+                                style: isAr
+                                    ? AppTheme.arabicTextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: colors.textPrimary,
+                                      )
+                                    : TextStyle(
+                                        fontSize: 12.5,
+                                        fontWeight: FontWeight.w700,
+                                        color: colors.textPrimary,
+                                      ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                entry.categoryKey,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 10.5,
+                                  color: colors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -903,6 +1026,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _openCategory(Category cat) {
     if (cat.key == 'duas' || cat.key == 'ziyaraat' || cat.key == 'munaejaat') {
+      if (widget.onOpenDuaCategory != null) {
+        widget.onOpenDuaCategory!(cat.key);
+        return;
+      }
       if (widget.onSelectTab != null) {
         widget.onSelectTab!(1);
         return;

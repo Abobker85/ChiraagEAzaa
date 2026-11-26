@@ -227,6 +227,7 @@ class MainShell extends StatefulWidget {
 
 class _MainShellState extends State<MainShell> {
   int _tab = 0;
+  final GlobalKey<DuaHubScreenState> _duaHubKey = GlobalKey<DuaHubScreenState>();
 
   static const _tabs = [
     (Icons.home_outlined, Icons.home_rounded, 'Home'),
@@ -246,6 +247,12 @@ class _MainShellState extends State<MainShell> {
     setState(() => _tab = idx);
   }
 
+  void _openDuaCategory(String categoryKey) {
+    HapticFeedback.selectionClick();
+    setState(() => _tab = 1);
+    _duaHubKey.currentState?.selectCategory(categoryKey);
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
@@ -254,8 +261,11 @@ class _MainShellState extends State<MainShell> {
     final bodyStack = IndexedStack(
       index: _tab,
       children: [
-        HomeScreen(onSelectTab: _selectTab),
-        const DuaHubScreen(),
+        HomeScreen(
+          onSelectTab: _selectTab,
+          onOpenDuaCategory: _openDuaCategory,
+        ),
+        DuaHubScreen(key: _duaHubKey),
         const SearchScreen(),
         const TasbihScreen(),
         const SavedScreen(),

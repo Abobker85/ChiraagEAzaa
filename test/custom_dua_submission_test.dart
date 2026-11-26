@@ -67,10 +67,11 @@ void main() {
     );
     await tester.tap(find.byKey(const Key('custom_dua_submit_btn')));
     await tester.pump();
-    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 400)));
-    await tester.pump(const Duration(milliseconds: 400));
-    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 400)));
-    await tester.pump(const Duration(milliseconds: 400));
+    for (int i = 0; i < 40; i++) {
+      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 50)));
+      await tester.pump(const Duration(milliseconds: 50));
+      if (DuaLanguageService.instance.getByTitle(uniqueTitle) != null) break;
+    }
 
     // Verify it appears in the DuaHub index and in FTS search
     final searchResults = await tester.runAsync(

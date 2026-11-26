@@ -1,7 +1,7 @@
 name: chiraag_e_azaa
 description: 5,128 Nouhay, Marsias, Duas, Manqabat & more
 publish_to: 'none'
-version: 1.3.0+20
+version: 1.4.0+21
 
 environment:
   sdk: '>=3.0.0 <4.0.0'

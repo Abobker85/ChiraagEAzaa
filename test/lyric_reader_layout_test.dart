@@ -17,6 +17,15 @@ void main() {
     await DatabaseService.instance.loadBookmarkIds();
   });
 
+  Future<void> settleReader(WidgetTester tester) async {
+    for (int i = 0; i < 30; i++) {
+      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 50)));
+      await tester.pump();
+      if (find.byType(CircularProgressIndicator).evaluate().isEmpty) break;
+    }
+    await tester.pumpAndSettle();
+  }
+
   group('LyricDetailScreen.sanitizeLtrHtml', () {
     test('strips unquoted, double-quoted, and single-quoted style/width/height attributes', () {
       const raw = '<div style=width:100%><h3><u>eid aayi hai</u></h3>'
@@ -67,8 +76,7 @@ void main() {
             ),
           ),
         );
-        await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 250)));
-        await tester.pumpAndSettle();
+        await settleReader(tester);
 
         // Find the rendered RichText containing the lyric body
         final richTexts = tester.widgetList<RichText>(find.byType(RichText)).toList();
@@ -109,8 +117,7 @@ void main() {
           ),
         ),
       );
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 250)));
-      await tester.pumpAndSettle();
+      await settleReader(tester);
 
       final arabicTextFinder = find.byWidgetPredicate(
         (w) =>
@@ -139,8 +146,7 @@ void main() {
           ),
         ),
       );
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 250)));
-      await tester.pumpAndSettle();
+      await settleReader(tester);
 
       final urduTextFinder = find.byWidgetPredicate(
         (w) => w is Text && (w.data ?? '').contains('عباس') && w.textAlign == TextAlign.right,
@@ -166,8 +172,7 @@ void main() {
           ),
         ),
       );
-      await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 250)));
-      await tester.pumpAndSettle();
+      await settleReader(tester);
 
       final ltrDirFinder = find.byWidgetPredicate(
         (w) => w is Directionality && w.textDirection == TextDirection.ltr,

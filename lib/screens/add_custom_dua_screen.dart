@@ -34,6 +34,9 @@ class _AddCustomDuaScreenState extends State<AddCustomDuaScreen> {
     (key: 'duas', label: 'Duas'),
     (key: 'ziyaraat', label: 'Ziyaraat'),
     (key: 'munaejaat', label: 'Munajaat'),
+    (key: 'nouhay', label: 'Nouhay'),
+    (key: 'marsias', label: 'Marsias'),
+    (key: 'urduMarsiye', label: 'Urdu Poem'),
   ];
 
   @override
@@ -190,12 +193,23 @@ class _AddCustomDuaScreenState extends State<AddCustomDuaScreen> {
               ),
             ),
             const SizedBox(height: 8),
-            SegmentedButton<String>(
-              segments: _categories
-                  .map((c) => ButtonSegment(value: c.key, label: Text(c.label)))
-                  .toList(),
-              selected: {_categoryKey},
-              onSelectionChanged: (sel) => setState(() => _categoryKey = sel.first),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _categories.map((c) {
+                final selected = _categoryKey == c.key;
+                return ChoiceChip(
+                  label: Text(c.label),
+                  selected: selected,
+                  selectedColor: colors.accent,
+                  labelStyle: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: selected ? Colors.white : colors.textPrimary,
+                  ),
+                  onSelected: (_) => setState(() => _categoryKey = c.key),
+                );
+              }).toList(),
             ),
             const SizedBox(height: 16),
             TextFormField(

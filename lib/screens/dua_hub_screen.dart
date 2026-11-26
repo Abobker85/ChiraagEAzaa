@@ -13,7 +13,7 @@ class DuaHubScreen extends StatefulWidget {
   const DuaHubScreen({super.key, this.initialCategoryKey = 'duas'});
 
   @override
-  State<DuaHubScreen> createState() => _DuaHubScreenState();
+  State<DuaHubScreen> createState() => DuaHubScreenState();
 }
 
 class _DuaTabDefinition {
@@ -30,7 +30,7 @@ class _DuaTabDefinition {
   });
 }
 
-class _DuaHubScreenState extends State<DuaHubScreen>
+class DuaHubScreenState extends State<DuaHubScreen>
     with SingleTickerProviderStateMixin {
   static const List<_DuaTabDefinition> _tabs = [
     _DuaTabDefinition(
@@ -75,6 +75,14 @@ class _DuaHubScreenState extends State<DuaHubScreen>
     });
 
     _loadAllCategories();
+  }
+
+  /// Programmatically switches to the tab matching [categoryKey] ('duas', 'ziyaraat', or 'munaejaat').
+  void selectCategory(String categoryKey) {
+    final idx = _tabs.indexWhere((t) => t.key == categoryKey);
+    if (idx >= 0 && _tabController.index != idx) {
+      _tabController.animateTo(idx);
+    }
   }
 
   @override

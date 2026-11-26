@@ -6,6 +6,7 @@ import '../models/lyric_item.dart';
 import '../services/database_service.dart';
 import '../services/dua_language_service.dart';
 import '../services/settings_service.dart';
+import '../services/user_data_service.dart';
 import '../widgets/auto_scroll_controls.dart';
 
 class LyricDetailScreen extends StatefulWidget {
@@ -172,6 +173,103 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
       _toastEntry?.remove();
       _toastEntry = null;
     });
+  }
+
+  void _showReciterNoteSheet() {
+    final item = _currentItem;
+    final ctrl = TextEditingController(
+      text: UserDataService.instance.getNote(item.id) ?? '',
+    );
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final colors = AppColors.of(ctx);
+        return Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: Container(
+            decoration: BoxDecoration(
+              color: colors.card,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(22)),
+              border: Border(top: BorderSide(color: colors.separator)),
+            ),
+            padding: const EdgeInsets.fromLTRB(20, 14, 20, 24),
+            child: SafeArea(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 36,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: colors.separator,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Personal Reciter Note',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: colors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    key: const Key('lyric_note_input'),
+                    controller: ctrl,
+                    minLines: 3,
+                    maxLines: 6,
+                    autofocus: true,
+                    style: TextStyle(fontSize: 14, color: colors.textPrimary),
+                    decoration: InputDecoration(
+                      hintText: 'e.g., Start slow here, Repeat 3x, Recited on 7th Muharram...',
+                      hintStyle: TextStyle(color: colors.textTertiary, fontSize: 13),
+                      filled: true,
+                      fillColor: colors.inputFill,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      if (UserDataService.instance.hasNote(item.id))
+                        TextButton(
+                          onPressed: () async {
+                            await UserDataService.instance.saveNote(item.id, '');
+                            if (ctx.mounted) Navigator.pop(ctx);
+                            _toast('Note cleared');
+                          },
+                          child: const Text('Clear', style: TextStyle(color: AppTheme.errorRed)),
+                        ),
+                      const Spacer(),
+                      FilledButton(
+                        key: const Key('lyric_note_save_btn'),
+                        onPressed: () async {
+                          await UserDataService.instance.saveNote(item.id, ctrl.text);
+                          if (ctx.mounted) Navigator.pop(ctx);
+                          _toast('Note saved');
+                        },
+                        child: const Text('Save Note'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
   }
 
   void _showFontSettingsSheet() {
@@ -592,6 +690,22 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
             ),
             actions: [
               AnimatedBuilder(
+                animation: UserDataService.instance,
+                builder: (_, __) {
+                  final noted = UserDataService.instance.hasNote(_currentItem.id);
+                  return IconButton(
+                    key: const Key('lyric_note_btn'),
+                    icon: Icon(
+                      noted ? Icons.sticky_note_2_rounded : Icons.sticky_note_2_outlined,
+                      size: 20,
+                      color: noted ? colors.gold : null,
+                    ),
+                    tooltip: 'Personal Reciter Note',
+                    onPressed: _showReciterNoteSheet,
+                  );
+                },
+              ),
+              AnimatedBuilder(
                 animation: _autoScroll,
                 builder: (_, __) => IconButton(
                   key: const Key('lyric_auto_scroll_toggle'),
@@ -637,6 +751,7 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
                   setState(() {
                     _currentIndex = idx;
                   });
+                  UserDataService.instance.recordRecent(_playlist[idx]);
                 },
                 itemBuilder: (context, index) {
                   final item = _playlist[index];
@@ -873,12 +988,16 @@ class _LyricPageViewState extends State<_LyricPageView> {
   }
 
   Future<void> _load() async {
-    await DuaLanguageService.instance.ensureLoaded();
     final detail = await DatabaseService.instance.getLyricDetail(widget.item.id);
     if (!mounted) return;
-    final raw = detail?.contentHtml;
     final catKey = widget.item.categoryKey.split('/').first;
-    final multilang = (catKey == 'duas' || catKey == 'ziyaraat' || catKey == 'munaejaat')
+    final isDuaCat = catKey == 'duas' || catKey == 'ziyaraat' || catKey == 'munaejaat';
+    if (isDuaCat) {
+      await DuaLanguageService.instance.ensureLoaded();
+      if (!mounted) return;
+    }
+    final raw = detail?.contentHtml;
+    final multilang = isDuaCat
         ? DuaLanguageService.instance.getByTitle(widget.item.title)
         : null;
     final blocks = raw != null && _isRtl ? _parseBlocks(raw) : <_ContentBlock>[];
@@ -888,6 +1007,9 @@ class _LyricPageViewState extends State<_LyricPageView> {
       _blocks = blocks;
       _loading = false;
     });
+    if (widget.isActive) {
+      UserDataService.instance.recordRecent(widget.item);
+    }
     if (multilang != null) {
       final combined = multilang.verses
           .map((v) => '${v.arabic}\n${v.roman}\n${v.english}')

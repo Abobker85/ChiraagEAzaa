@@ -21,6 +21,7 @@ class DatabaseService {
   static const _dbVersion = 2; // bump when shipping a new DB asset
   static const int customDuaMinId = 900000;
   static const String customDuasSettingKey = 'custom_duas_v1';
+  static String? _testIsolateDbDir;
 
   static bool isCustomDuaId(int id) => id >= customDuaMinId;
 
@@ -36,7 +37,15 @@ class DatabaseService {
       return _openWeb();
     }
 
-    final dbDir = await getDatabasesPath();
+    final String dbDir;
+    if (Platform.environment['FLUTTER_TEST'] == 'true') {
+      _testIsolateDbDir ??= Directory.systemTemp
+          .createTempSync('chiraag_test_db_')
+          .path;
+      dbDir = _testIsolateDbDir!;
+    } else {
+      dbDir = await getDatabasesPath();
+    }
     final dbPath = join(dbDir, _dbName);
 
     // Copy from assets if not yet on device OR version changed OR corrupt

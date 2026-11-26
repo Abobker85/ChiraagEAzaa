@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import '../theme.dart';
 import '../services/settings_service.dart';
 import '../services/push_service.dart';
+import '../services/user_data_service.dart';
 import '../widgets/parents_memorial_card.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -211,6 +213,30 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 },
               ),
             ]),
+            _sectionHeader('Backup & Restore', colors),
+            _settingsCard(colors, [
+              ListTile(
+                key: const Key('settings_export_backup_btn'),
+                leading: Icon(Icons.upload_rounded, color: colors.accent),
+                title: Text('Export Backup (Copy JSON)', style: TextStyle(color: colors.textPrimary)),
+                subtitle: Text(
+                  'Copy Bookmarks, Custom Duas, Majlis Playlists, Khatm & Notes',
+                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                ),
+                onTap: _exportBackup,
+              ),
+              Divider(height: 1, thickness: 0.5, color: colors.separator),
+              ListTile(
+                key: const Key('settings_import_backup_btn'),
+                leading: Icon(Icons.download_rounded, color: colors.accent),
+                title: Text('Restore from Backup JSON', style: TextStyle(color: colors.textPrimary)),
+                subtitle: Text(
+                  'Paste a previously exported backup to restore your data',
+                  style: TextStyle(fontSize: 12, color: colors.textSecondary),
+                ),
+                onTap: _showImportBackupDialog,
+              ),
+            ]),
             _sectionHeader('About', colors),
             _settingsCard(colors, [
               _infoRow(
@@ -260,6 +286,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _exportBackup() async {
+    try {
+      final jsonStr = await UserDataService.instance.exportBackupJson();
+      await Clipboard.setData(ClipboardData(text: jsonStr));
+      _showToast('Backup JSON copied to clipboard');
+    } catch (e) {
+      _showToast('Export failed: $e');
+    }
+  }
+
+  Future<void> _showImportBackupDialog() async {
+    final ctrl = TextEditingController();
+    final raw = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Restore Backup'),
+        content: TextField(
+          key: const Key('restore_backup_input'),
+          controller: ctrl,
+          minLines: 4,
+          maxLines: 8,
+          decoration: const InputDecoration(
+            hintText: 'Paste exported Chiraag e Azaa JSON backup here...',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const Key('restore_backup_confirm_btn'),
+            onPressed: () => Navigator.pop(ctx, ctrl.text),
+            child: const Text('Restore'),
+          ),
+        ],
+      ),
+    );
+    if (raw == null || raw.trim().isEmpty) return;
+    try {
+      final summary = await UserDataService.instance.importBackupJson(raw);
+      _showToast(summary);
+    } catch (e) {
+      _showToast('Invalid backup JSON');
+    }
   }
 
   Widget _pushRow(AppColors colors) {
