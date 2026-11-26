@@ -44,7 +44,13 @@ void main() {
     await tester.tap(bubble);
     await tester.pumpAndSettle();
 
-    expect(find.text('Parents Dua'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byType(Dialog),
+        matching: find.text('Parents Dua'),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ'), findsOneWidget);
     expect(find.text('Al-Haj O Zawar Janab Mir Hussain Ali'), findsOneWidget);
     expect(find.text('Ex-Secretary, Anjuman-e-Parwanah Jaffariyah'), findsOneWidget);
@@ -53,7 +59,7 @@ void main() {
     // Close via top-right Close button
     await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
-    expect(find.text('Parents Dua'), findsNothing);
+    expect(find.byType(Dialog), findsNothing);
   });
 
   testWidgets('ParentsDuaBubble does NOT appear on non-Home pages', (tester) async {

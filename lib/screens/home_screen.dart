@@ -3,13 +3,15 @@ import '../theme.dart';
 import '../models/lyric_item.dart';
 import '../services/database_service.dart';
 import '../services/islamic_calendar_service.dart';
+import '../services/quran_service.dart';
 import '../services/user_data_service.dart';
+import '../widgets/parents_dua_bubble.dart';
 import 'category_screen.dart';
 import 'dua_hub_screen.dart';
 import 'lyric_detail_screen.dart';
 import 'quran_hub_screen.dart';
+import 'quran_reader_screen.dart';
 import 'shia_calendar_screen.dart';
-import '../widgets/parents_dua_bubble.dart';
 
 class HomeScreen extends StatefulWidget {
   final ValueChanged<int>? onSelectTab;
@@ -80,6 +82,33 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> _openDuaByTitle(String title) async {
+    final duas = await DatabaseService.instance.getLyricsByCategory('duas');
+    if (!mounted) return;
+    final idx = duas.indexWhere(
+      (d) => d.title.toLowerCase() == title.toLowerCase(),
+    );
+    if (idx >= 0) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LyricDetailScreen(
+            item: duas[idx],
+            playlist: duas,
+            initialIndex: idx,
+          ),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const DuaHubScreen(initialCategoryKey: 'duas'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
@@ -139,236 +168,557 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
       ),
-      body: Stack(
-        children: [
-          _cats == null
-              ? Center(child: CircularProgressIndicator(color: colors.accent))
-              : RefreshIndicator(
-                  color: colors.accent,
-                  onRefresh: _loadCategories,
-                  child: ListView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 110),
-                    children: [
-                      _buildHeroBanner(colors),
-                      const SizedBox(height: 14),
-                      _buildIslamicCalendarCard(colors),
-                      const SizedBox(height: 14),
-                      _buildQuickUtilities(colors),
-                      const SizedBox(height: 14),
-                      _buildQuranBannerCard(colors),
-                      _buildRecentlyReadSection(colors),
-                      const SizedBox(height: 18),
-                      ..._buildFeaturedSection(colors),
-                      const SizedBox(height: 16),
-                      ..._buildOtherCollectionsSection(colors),
-                    ],
-                  ),
-                ),
-          const ParentsDuaBubble(),
-        ],
-      ),
+      body: _cats == null
+          ? Center(child: CircularProgressIndicator(color: colors.accent))
+          : RefreshIndicator(
+              color: colors.accent,
+              onRefresh: _loadCategories,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 110),
+                children: [
+                  _buildEmeraldSanctuaryHero(colors),
+                  const SizedBox(height: 12),
+                  _buildDualSpotlightRow(colors),
+                  const SizedBox(height: 10),
+                  _buildQuickStrip(colors),
+                  _buildRecentlyReadSection(colors),
+                  const SizedBox(height: 18),
+                  ..._buildFeaturedSection(colors),
+                  const SizedBox(height: 16),
+                  ..._buildOtherCollectionsSection(colors),
+                ],
+              ),
+            ),
     );
   }
 
-  // ── Spiritual Hero Banner ──────────────────────────────────────────────────
-  Widget _buildIslamicCalendarCard(AppColors colors) {
+  /// Option B Unified Emerald Sanctuary Hero combining Arabic salutation,
+  /// Hijri date, and upcoming Shia occasion into one cohesive card (no nested
+  /// boxes, no emoji stand-ins, and no redundant search box).
+  Widget _buildEmeraldSanctuaryHero(AppColors colors) {
     final now = DateTime.now();
     final hijri = IslamicCalendarService.toHijri(now);
     final upcoming = IslamicCalendarService.nextOccasion(now);
-    final daily = IslamicCalendarService.dailyDua(now);
-
-    Future<void> openDuaByTitle(String title) async {
-      final duas = await DatabaseService.instance.getLyricsByCategory('duas');
-      if (!mounted) return;
-      final idx = duas.indexWhere(
-        (d) => d.title.toLowerCase() == title.toLowerCase(),
-      );
-      if (idx >= 0) {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => LyricDetailScreen(
-              item: duas[idx],
-              playlist: duas,
-              initialIndex: idx,
-            ),
-          ),
-        );
-      } else {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => const DuaHubScreen(initialCategoryKey: 'duas'),
-          ),
-        );
-      }
-    }
 
     return Container(
       key: const Key('home_islamic_calendar_card'),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colors.card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colors.gold.withValues(alpha: 0.35), width: 1),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF165225),
+            Color(0xFF0B2F14),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: AppTheme.gold.withValues(alpha: 0.42),
+          width: 1.1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0D3316).withValues(alpha: 0.20),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InkWell(
-            key: const Key('home_open_calendar_btn'),
-            borderRadius: BorderRadius.circular(11),
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const ShiaCalendarScreen()),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(7),
-                      decoration: BoxDecoration(
-                        color: colors.goldSoft,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(
-                        Icons.nightlight_round,
-                        size: 16,
-                        color: colors.gold,
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Material(
+        color: Colors.transparent,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
                         children: [
-                          Text(
-                            hijri.formattedEn,
-                            style: TextStyle(
-                              fontSize: 13.5,
-                              fontWeight: FontWeight.w800,
-                              color: colors.textPrimary,
+                          Container(
+                            width: 28,
+                            height: 28,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.14),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: AppTheme.gold.withValues(alpha: 0.45),
+                              ),
+                            ),
+                            child: const Icon(
+                              Icons.brightness_2_rounded,
+                              color: AppTheme.gold,
+                              size: 15,
                             ),
                           ),
-                          Text(
-                            hijri.formattedAr,
-                            textDirection: TextDirection.rtl,
-                            style: AppTheme.arabicTextStyle(
-                              fontSize: 14,
-                              color: colors.gold,
-                              height: 1.3,
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Shia Recitations Archive',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFDCEEE1),
                             ),
                           ),
                         ],
                       ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: upcoming.isToday
-                            ? colors.accent
-                            : colors.accentSoft,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        upcoming.isToday
-                            ? 'Today'
-                            : 'In ${upcoming.daysUntil}d',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: upcoming.isToday ? Colors.white : colors.accent,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: colors.bg,
-                    borderRadius: BorderRadius.circular(11),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        upcoming.occasion.isMourning
-                            ? Icons.brightness_2_rounded
-                            : Icons.auto_awesome_rounded,
-                        size: 15,
-                        color: upcoming.occasion.isMourning
-                            ? colors.textSecondary
-                            : colors.gold,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
                         child: Text(
-                          upcoming.occasion.title,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: colors.textPrimary,
+                          'چراغِ عزا',
+                          textDirection: TextDirection.rtl,
+                          style: AppTheme.arabicTextStyle(
+                            fontSize: 13.5,
+                            color: AppTheme.gold,
+                            height: 1.2,
                           ),
                         ),
                       ),
-                      Icon(Icons.calendar_month_rounded, size: 15, color: colors.accent),
                     ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'السلام عليك يا أبا عبد الله',
+                    textDirection: TextDirection.rtl,
+                    textAlign: TextAlign.center,
+                    style: AppTheme.arabicTextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      height: 1.35,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  const Text(
+                    'Peace be upon you, O Aba Abdillah (a.s.)',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      color: Color(0xFFD5EADB),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Divider(
+              height: 1,
+              thickness: 0.8,
+              color: Colors.white.withValues(alpha: 0.14),
+            ),
+            InkWell(
+              key: const Key('home_open_calendar_btn'),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ShiaCalendarScreen()),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 14, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.calendar_today_rounded,
+                          size: 13.5,
+                          color: AppTheme.gold,
+                        ),
+                        const SizedBox(width: 7),
+                        Expanded(
+                          child: Text(
+                            hijri.formattedEn,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          hijri.formattedAr,
+                          textDirection: TextDirection.rtl,
+                          style: AppTheme.arabicTextStyle(
+                            fontSize: 13,
+                            color: AppTheme.gold,
+                            height: 1.2,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 5),
+                    Row(
+                      children: [
+                        Container(
+                          width: 6,
+                          height: 6,
+                          decoration: BoxDecoration(
+                            color: upcoming.occasion.isMourning
+                                ? const Color(0xFFD5EADB)
+                                : AppTheme.gold,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 7),
+                        Expanded(
+                          child: Text(
+                            upcoming.isToday
+                                ? '${upcoming.occasion.title} (Today)'
+                                : '${upcoming.occasion.title} · In ${upcoming.daysUntil}d',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFFE6F3EA),
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          size: 16,
+                          color: AppTheme.gold,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Equal-height dual spotlight cards for Holy Quran & Daily Recommended Dua.
+  Widget _buildDualSpotlightRow(AppColors colors) {
+    final daily = IslamicCalendarService.dailyDua(DateTime.now());
+    return AnimatedBuilder(
+      animation: QuranService.instance,
+      builder: (context, _) {
+        final q = QuranService.instance;
+        final lastSurah =
+            (q.isLoaded && q.lastReadSurah != null) ? q.getSurah(q.lastReadSurah!) : null;
+        final quranSubtitle = lastSurah != null
+            ? '${lastSurah.englishName} (${q.lastReadAyah ?? 1})'
+            : '114 Surahs · Mushaf';
+        final quranActionLabel = lastSurah != null ? 'Resume' : 'Read Quran';
+
+        return IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: Material(
+                  color: colors.card,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: colors.gold.withValues(alpha: 0.45), width: 1.0),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    key: const Key('home_quran_card'),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => lastSurah != null
+                              ? QuranReaderScreen(
+                                  initialSurahNumber: lastSurah.number,
+                                  initialAyahNumber: q.lastReadAyah ?? 1,
+                                )
+                              : const QuranHubScreen(),
+                        ),
+                      );
+                    },
+                    child: Padding(
+                      padding: const EdgeInsets.all(13),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: colors.accentSoft,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.auto_stories_rounded,
+                                  size: 18,
+                                  color: colors.accent,
+                                ),
+                              ),
+                              Text(
+                                'القرآن',
+                                textDirection: TextDirection.rtl,
+                                style: AppTheme.arabicTextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: colors.accent,
+                                  height: 1.2,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Holy Quran',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: colors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                quranSubtitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: colors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Text(
+                                quranActionLabel,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: colors.accent,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 15,
+                                color: colors.accent,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Material(
+                  color: colors.card,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    side: BorderSide(color: colors.separator),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    key: const Key('home_daily_dua_btn'),
+                    onTap: () => _openDuaByTitle(daily.duaTitle),
+                    child: Padding(
+                      padding: const EdgeInsets.all(13),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                width: 34,
+                                height: 34,
+                                decoration: BoxDecoration(
+                                  color: colors.goldSoft,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Icon(
+                                  Icons.menu_book_rounded,
+                                  size: 18,
+                                  color: colors.gold,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: colors.goldSoft,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Text(
+                                  'Daily Dua',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w700,
+                                    color: colors.gold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                daily.duaTitle,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: colors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                daily.dayLabel.replaceAll(' Recommended', ''),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  color: colors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Text(
+                                'Recite Now',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: colors.accent,
+                                ),
+                              ),
+                              const Spacer(),
+                              Icon(
+                                Icons.play_arrow_rounded,
+                                size: 17,
+                                color: colors.accent,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  /// Slim horizontal quick-utility strip anchoring Tasbih, Saved, Quran Hub,
+  /// and Parents Dua cleanly in-flow with zero floating-button overlap.
+  Widget _buildQuickStrip(AppColors colors) {
+    Widget stripPill({
+      Key? key,
+      required IconData icon,
+      required Color iconColor,
+      required String label,
+      required VoidCallback onTap,
+      bool goldHighlight = false,
+    }) {
+      return Material(
+        color: goldHighlight ? colors.goldSoft : colors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(13),
+          side: BorderSide(
+            color: goldHighlight
+                ? colors.gold.withValues(alpha: 0.45)
+                : colors.separator,
+          ),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: key,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 16, color: iconColor),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: colors.textPrimary,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 10),
-          InkWell(
-            key: const Key('home_daily_dua_btn'),
-            borderRadius: BorderRadius.circular(11),
-            onTap: () => openDuaByTitle(daily.duaTitle),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 9),
-              decoration: BoxDecoration(
-                color: colors.accentSoft.withValues(alpha: 0.75),
-                borderRadius: BorderRadius.circular(11),
-                border: Border.all(color: colors.accent.withValues(alpha: 0.2)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.menu_book_rounded, size: 16, color: colors.accent),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${daily.dayLabel}: ${daily.duaTitle}',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700,
-                            color: colors.accent,
-                          ),
-                        ),
-                        Text(
-                          daily.subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: colors.textSecondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(Icons.chevron_right_rounded, size: 18, color: colors.accent),
-                ],
-              ),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          stripPill(
+            key: const Key('parents_dua_bubble'),
+            icon: Icons.volunteer_activism_rounded,
+            iconColor: colors.gold,
+            label: 'Parents Dua',
+            goldHighlight: true,
+            onTap: () => showParentsDuaDialog(context),
+          ),
+          const SizedBox(width: 8),
+          stripPill(
+            icon: Icons.blur_circular_rounded,
+            iconColor: colors.accent,
+            label: 'Tasbih',
+            onTap: () => widget.onSelectTab?.call(3),
+          ),
+          const SizedBox(width: 8),
+          stripPill(
+            icon: Icons.bookmark_rounded,
+            iconColor: colors.accent,
+            label: 'Saved & Majlis',
+            onTap: () => widget.onSelectTab?.call(4),
+          ),
+          const SizedBox(width: 8),
+          stripPill(
+            icon: Icons.grid_view_rounded,
+            iconColor: colors.gold,
+            label: 'All 114 Surahs',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const QuranHubScreen()),
             ),
           ),
         ],
@@ -392,7 +742,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(Icons.history_rounded, size: 16, color: colors.accent),
                   const SizedBox(width: 6),
                   Text(
-                    'Recently Read',
+                    'Continue Reciting',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
@@ -403,7 +753,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 8),
               SizedBox(
-                height: 66,
+                height: 64,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: recent.length,
@@ -414,7 +764,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     return Material(
                       color: colors.card,
                       shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(13),
                         side: BorderSide(color: colors.separator),
                       ),
                       clipBehavior: Clip.antiAlias,
@@ -429,7 +779,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                         child: Container(
                           width: 175,
-                          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -476,347 +826,6 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildHeroBanner(AppColors colors) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF165225),
-            Color(0xFF0D3316),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: AppTheme.gold.withValues(alpha: 0.35),
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.green.withValues(alpha: 0.22),
-            blurRadius: 18,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.12),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppTheme.gold.withValues(alpha: 0.4),
-                  ),
-                ),
-                child: const Text('🕯️', style: TextStyle(fontSize: 20)),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'السلام عليك يا أبا عبد الله',
-                      textDirection: TextDirection.rtl,
-                      style: AppTheme.arabicTextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        height: 1.3,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text.rich(
-                      TextSpan(
-                        children: [
-                          TextSpan(
-                            text: 'چراغِ عزا',
-                            style: AppTheme.arabicTextStyle(
-                              fontSize: 14,
-                              color: const Color(0xFFE8F5EC),
-                              fontWeight: FontWeight.w400,
-                            ),
-                          ),
-                          const TextSpan(
-                            text: ' • Comprehensive Offline Shia Recitations',
-                            style: TextStyle(
-                              fontSize: 11.5,
-                              color: Color(0xFFE8F5EC),
-                              fontWeight: FontWeight.w400,
-                              letterSpacing: 0,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Interactive Search Bar Trigger
-          Material(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () => widget.onSelectTab?.call(2),
-              child: Container(
-                height: 44,
-                padding: const EdgeInsets.symmetric(horizontal: 14),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: AppTheme.gold.withValues(alpha: 0.3),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.search_rounded,
-                      color: AppTheme.green,
-                      size: 21,
-                    ),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'Search nouhay, marsias, poet or lyrics...',
-                        style: TextStyle(
-                          color: AppTheme.textSecondary,
-                          fontSize: 13,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppTheme.greenPale,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'Find',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.green,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Quick Utilities ────────────────────────────────────────────────────────
-  Widget _buildQuickUtilities(AppColors colors) {
-    return Row(
-      children: [
-        Expanded(
-          child: _quickUtilityCard(
-            colors: colors,
-            icon: Icons.blur_circular_rounded,
-            title: 'Digital Tasbih',
-            subtitle: 'Count Dhikr',
-            iconColor: colors.accent,
-            onTap: () => widget.onSelectTab?.call(3),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _quickUtilityCard(
-            colors: colors,
-            icon: Icons.bookmark_rounded,
-            title: 'Saved Lyrics',
-            subtitle: 'Quick Bookmarks',
-            iconColor: colors.gold,
-            onTap: () => widget.onSelectTab?.call(4),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _quickUtilityCard({
-    required AppColors colors,
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color iconColor,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: colors.card,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: colors.separator),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: iconColor.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(11),
-                ),
-                child: Icon(icon, color: iconColor, size: 21),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      title,
-                      style: TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: colors.textPrimary,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: colors.textTertiary,
-                size: 18,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ── Holy Quran Entry Card ──────────────────────────────────────────────────
-  Widget _buildQuranBannerCard(AppColors colors) {
-    return Material(
-      color: colors.card,
-      borderRadius: BorderRadius.circular(18),
-      child: InkWell(
-        key: const Key('home_quran_card'),
-        borderRadius: BorderRadius.circular(18),
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const QuranHubScreen()),
-        ),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: colors.gold.withValues(alpha: 0.55),
-              width: 1.2,
-            ),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                colors.accentSoft,
-                colors.goldSoft.withValues(alpha: 0.65),
-              ],
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: colors.accent,
-                  borderRadius: BorderRadius.circular(13),
-                ),
-                child: const Icon(
-                  Icons.auto_stories_rounded,
-                  color: AppTheme.gold,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Text(
-                          'Holy Quran',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: colors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'القرآن الكريم',
-                          textDirection: TextDirection.rtl,
-                          style: AppTheme.arabicTextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w700,
-                            color: colors.accent,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '114 Surahs · Arabic, Roman, English & Recitation',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: colors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                color: colors.accent,
-                size: 22,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   // ── Featured Categories Grid ───────────────────────────────────────────────
   List<Widget> _buildFeaturedSection(AppColors colors) {
     if (_cats == null) return [];
@@ -844,9 +853,10 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           Text(
-            'Primary Collections',
+            '${featured.length} Sections',
             style: TextStyle(
               fontSize: 12,
+              fontWeight: FontWeight.w600,
               color: colors.textSecondary,
             ),
           ),
@@ -860,9 +870,9 @@ class _HomeScreenState extends State<HomeScreen> {
         itemCount: featured.length,
         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
           crossAxisCount: 2,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          childAspectRatio: 1.42,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: 2.05,
         ),
         itemBuilder: (ctx, i) {
           final cat = featured[i];
@@ -1065,90 +1075,76 @@ class _FeaturedCard extends StatelessWidget {
     final colors = AppColors.of(context);
     return Material(
       color: colors.card,
-      borderRadius: BorderRadius.circular(18),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(15),
+        side: BorderSide(color: colors.separator),
+      ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.all(13),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: colors.separator),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 10),
+          child: Row(
             children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      color: colors.accentSoft,
-                      borderRadius: BorderRadius.circular(11),
-                    ),
-                    child: Center(
-                      child: Icon(
-                        AppCategories.getIcon(cat.key),
-                        color: colors.accent,
-                        size: 20,
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: colors.accentSoft,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  AppCategories.getIcon(cat.key),
+                  color: colors.accent,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      cat.label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w700,
+                        color: colors.textPrimary,
                       ),
                     ),
-                  ),
-                  if (cat.count > 0)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 7,
-                        vertical: 2.5,
+                    const SizedBox(height: 1),
+                    Text(
+                      cat.count > 0 ? '${cat.count} items' : (urduSubtitle ?? 'Recitations'),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500,
+                        color: colors.textSecondary,
                       ),
-                      decoration: BoxDecoration(
-                        color: colors.accentBadge.withValues(alpha: 0.65),
-                        borderRadius: BorderRadius.circular(9),
-                      ),
-                      child: Text(
-                        '${cat.count}',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
+                    ),
+                    if (urduSubtitle != null)
+                      Text(
+                        urduSubtitle!,
+                        textDirection: TextDirection.rtl,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTheme.arabicTextStyle(
+                          fontSize: 12.5,
                           color: colors.accent,
+                          height: 1.15,
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    cat.label,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14.5,
-                      fontWeight: FontWeight.w700,
-                      color: colors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    urduSubtitle ?? 'Recitation',
-                    textDirection: urduSubtitle != null ? TextDirection.rtl : TextDirection.ltr,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: urduSubtitle != null
-                        ? AppTheme.arabicTextStyle(
-                            fontSize: 14,
-                            color: colors.textSecondary,
-                            height: 1.25,
-                          )
-                        : TextStyle(
-                            fontSize: 11.5,
-                            color: colors.textSecondary,
-                          ),
-                  ),
-                ],
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 16,
+                color: colors.textTertiary,
               ),
             ],
           ),

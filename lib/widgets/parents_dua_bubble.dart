@@ -3,7 +3,90 @@ import 'package:flutter/services.dart';
 import '../theme.dart';
 import 'parents_memorial_card.dart';
 
-/// Draggable floating bubble shown on the Home page.
+/// Opens the high-contrast Parents Dua / Memorial tribute dialog.
+Future<void> showParentsDuaDialog(BuildContext context) {
+  HapticFeedback.lightImpact();
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: true,
+    barrierColor: Colors.black.withValues(alpha: 0.62),
+    builder: (ctx) {
+      final colors = AppColors.of(ctx);
+      final isDark = Theme.of(ctx).brightness == Brightness.dark;
+      final surfaceColor = isDark ? const Color(0xFF181E1A) : const Color(0xFFFFFDF8);
+      final borderColor = isDark
+          ? AppTheme.gold.withValues(alpha: 0.55)
+          : const Color(0xFF9A7B2C).withValues(alpha: 0.65);
+
+      return Dialog(
+        backgroundColor: surfaceColor,
+        surfaceTintColor: Colors.transparent,
+        elevation: 16,
+        insetPadding: const EdgeInsets.fromLTRB(20, 28, 20, 100),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+          side: BorderSide(color: borderColor, width: 1.4),
+        ),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(18, 12, 12, 8),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.volunteer_activism_rounded,
+                      size: 19,
+                      color: isDark ? AppTheme.gold : const Color(0xFF1A5C28),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Parents Dua',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: isDark ? Colors.white : const Color(0xFF144A20),
+                        ),
+                      ),
+                    ),
+                    Material(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.14)
+                          : const Color(0xFFE5E9E6),
+                      shape: const CircleBorder(),
+                      child: IconButton(
+                        tooltip: 'Close',
+                        constraints: const BoxConstraints.tightFor(width: 34, height: 34),
+                        padding: EdgeInsets.zero,
+                        icon: Icon(
+                          Icons.close_rounded,
+                          size: 20,
+                          color: isDark ? Colors.white : const Color(0xFF141816),
+                        ),
+                        onPressed: () => Navigator.of(ctx).pop(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Divider(height: 1, thickness: 0.6, color: colors.separator),
+              const Flexible(
+                child: SingleChildScrollView(
+                  child: ParentsMemorialCard(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+/// Draggable floating bubble shown on the Home page when used standalone.
 /// Tapping toggles a dialog displaying the Parents' Dua / Memorial card.
 class ParentsDuaBubble extends StatefulWidget {
   final GlobalKey<NavigatorState>? navigatorKey;
@@ -21,7 +104,6 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
   // Position from top-left once dragged; null uses default bottom-right anchor.
   Offset? _offset;
   bool _dialogOpen = false;
-  BuildContext? _dialogContext;
 
   static const double _bubbleWidth = 88;
   static const double _bubbleHeight = 40;
@@ -29,11 +111,11 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
   Future<void> _toggleParentsDua() async {
     if (_dialogOpen) {
       HapticFeedback.lightImpact();
-      final ctx = _dialogContext;
-      if (ctx != null && ctx.mounted) {
-        Navigator.of(ctx).pop();
+      final navContext = widget.navigatorKey?.currentContext ?? context;
+      if (navContext.mounted) {
+        await Navigator.of(navContext).maybePop();
       } else {
-        widget.navigatorKey?.currentState?.maybePop();
+        await widget.navigatorKey?.currentState?.maybePop();
       }
       return;
     }
@@ -44,87 +126,8 @@ class _ParentsDuaBubbleState extends State<ParentsDuaBubble> {
     HapticFeedback.lightImpact();
     setState(() => _dialogOpen = true);
     try {
-      await showDialog<void>(
-        context: navContext,
-        barrierDismissible: true,
-        barrierColor: Colors.black.withValues(alpha: 0.62),
-        builder: (ctx) {
-          _dialogContext = ctx;
-          final colors = AppColors.of(ctx);
-          final isDark = Theme.of(ctx).brightness == Brightness.dark;
-          final surfaceColor = isDark ? const Color(0xFF181E1A) : const Color(0xFFFFFDF8);
-          final borderColor = isDark
-              ? AppTheme.gold.withValues(alpha: 0.55)
-              : const Color(0xFF9A7B2C).withValues(alpha: 0.65);
-
-          return Dialog(
-            backgroundColor: surfaceColor,
-            surfaceTintColor: Colors.transparent,
-            elevation: 16,
-            insetPadding: const EdgeInsets.fromLTRB(20, 28, 20, 100),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(22),
-              side: BorderSide(color: borderColor, width: 1.4),
-            ),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 12, 12, 8),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.volunteer_activism_rounded,
-                          size: 19,
-                          color: isDark ? AppTheme.gold : const Color(0xFF1A5C28),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            'Parents Dua',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : const Color(0xFF144A20),
-                            ),
-                          ),
-                        ),
-                        Material(
-                          color: isDark
-                              ? Colors.white.withValues(alpha: 0.14)
-                              : const Color(0xFFE5E9E6),
-                          shape: const CircleBorder(),
-                          child: IconButton(
-                            tooltip: 'Close',
-                            constraints: const BoxConstraints.tightFor(width: 34, height: 34),
-                            padding: EdgeInsets.zero,
-                            icon: Icon(
-                              Icons.close_rounded,
-                              size: 20,
-                              color: isDark ? Colors.white : const Color(0xFF141816),
-                            ),
-                            onPressed: () => Navigator.of(ctx).pop(),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Divider(height: 1, thickness: 0.6, color: colors.separator),
-                  const Flexible(
-                    child: SingleChildScrollView(
-                      child: ParentsMemorialCard(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
+      await showParentsDuaDialog(navContext);
     } finally {
-      _dialogContext = null;
       if (mounted) {
         setState(() => _dialogOpen = false);
       }

@@ -48,7 +48,7 @@ void main() {
     expect(find.byType(NavigationRail), findsNothing);
     expect(find.text('Home'), findsOneWidget);
     expect(find.text('Duas'), findsOneWidget);
-    expect(find.text('Tasbih'), findsOneWidget);
+    expect(find.text('Tasbih'), findsAtLeastNWidgets(1));
 
     // iPad wide width
     tester.view.physicalSize = const Size(1024 * 2, 1366 * 2);
