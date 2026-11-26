@@ -120,14 +120,14 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
       await DatabaseService.instance.addBookmark(id);
     }
     setState(() {});
-    _toast(isSaved ? 'Removed from saved' : 'Saved to bookmarks 🔖');
+    _toast(isSaved ? 'Removed from saved' : 'Saved to bookmarks');
   }
 
   void _copy(String? html) {
     if (html == null) return;
     final plain = html.replaceAll(RegExp(r'<[^>]+>'), '').replaceAll('&amp;', '&');
     Clipboard.setData(ClipboardData(text: plain));
-    _toast('Copied to clipboard 📋');
+    _toast('Copied to clipboard');
   }
 
   OverlayEntry? _toastEntry;
@@ -638,6 +638,9 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
     final hasMultiple = _playlist.length > 1;
     final isSaved = SavedManager.instance.isSaved(_currentItem.id);
     final colors = AppColors.of(context);
+    final catKey = _currentItem.categoryKey.split('/').first;
+    final isDuaFamily = catKey == 'duas' || catKey == 'ziyaraat' || catKey == 'munaejaat';
+    final appBarLabel = isDuaFamily ? 'Supplications' : 'Recitations';
 
     return AnimatedBuilder(
       animation: AppSettings.instance,
@@ -654,74 +657,25 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
           backgroundColor: readerBg,
           appBar: AppBar(
             backgroundColor: colors.card,
+            foregroundColor: colors.textPrimary,
             scrolledUnderElevation: 0,
             elevation: 0,
             leading: IconButton(
               icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+              tooltip: 'Back',
               onPressed: () => Navigator.pop(context),
             ),
-            title: Column(
-              children: [
-                Text(
-                  _currentItem.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textDirection: AppTheme.containsArabic(_currentItem.title)
-                      ? TextDirection.rtl
-                      : TextDirection.ltr,
-                  style: AppTheme.containsArabic(_currentItem.title)
-                      ? AppTheme.arabicTextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700,
-                          color: colors.textPrimary,
-                        )
-                      : TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
-                          color: colors.textPrimary,
-                        ),
-                ),
-                if (hasMultiple)
-                  Text(
-                    '${_currentIndex + 1} of ${_playlist.length}',
-                    style: TextStyle(fontSize: 11, color: colors.textSecondary),
-                  ),
-              ],
+            title: Text(
+              appBarLabel,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: colors.textPrimary,
+              ),
             ),
             actions: [
-              AnimatedBuilder(
-                animation: UserDataService.instance,
-                builder: (_, __) {
-                  final noted = UserDataService.instance.hasNote(_currentItem.id);
-                  return IconButton(
-                    key: const Key('lyric_note_btn'),
-                    icon: Icon(
-                      noted ? Icons.sticky_note_2_rounded : Icons.sticky_note_2_outlined,
-                      size: 20,
-                      color: noted ? colors.gold : null,
-                    ),
-                    tooltip: 'Personal Reciter Note',
-                    onPressed: _showReciterNoteSheet,
-                  );
-                },
-              ),
-              AnimatedBuilder(
-                animation: _autoScroll,
-                builder: (_, __) => IconButton(
-                  key: const Key('lyric_auto_scroll_toggle'),
-                  icon: Icon(
-                    _autoScroll.isVisible
-                        ? Icons.pause_circle_filled_rounded
-                        : Icons.slow_motion_video_rounded,
-                    size: 21,
-                    color: _autoScroll.isVisible ? colors.accent : null,
-                  ),
-                  tooltip: 'Auto-Scroll Teleprompter',
-                  onPressed: _autoScroll.togglePanel,
-                ),
-              ),
               IconButton(
-                icon: const Icon(Icons.format_size_rounded, size: 21),
+                icon: const Icon(Icons.format_size_rounded, size: 20),
                 tooltip: 'Text Size',
                 onPressed: _showFontSettingsSheet,
               ),
@@ -729,7 +683,7 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
                 icon: Icon(
                   isSaved ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
                   color: isSaved ? colors.accent : null,
-                  size: 22,
+                  size: 21,
                 ),
                 tooltip: 'Bookmark',
                 onPressed: _toggleSave,
@@ -757,8 +711,11 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
                   final item = _playlist[index];
                   return _LyricPageView(
                     item: item,
+                    indexInPlaylist: index,
+                    totalInPlaylist: _playlist.length,
                     autoScroll: _autoScroll,
                     isActive: index == _currentIndex,
+                    onTapReciterNote: _showReciterNoteSheet,
                     onContentLoaded: (html) {
                       _contentCache[item.id] = html;
                     },
@@ -773,137 +730,214 @@ class _LyricDetailScreenState extends State<LyricDetailScreen> {
               ),
             ],
           ),
-          bottomNavigationBar: hasMultiple ? _buildBottomNavigationBar(colors) : null,
+          bottomNavigationBar: _buildBottomNavigationBar(colors, hasMultiple),
         );
       },
     );
   }
 
-  Widget _buildBottomNavigationBar(AppColors colors) {
+  Widget _buildBottomNavigationBar(AppColors colors, bool hasMultiple) {
     final isFirst = _currentIndex == 0;
     final isLast = _currentIndex >= _playlist.length - 1;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final dockBg = isDark ? const Color(0xFF142419) : const Color(0xFF0E3D19);
+    const activeFg = Colors.white;
+    final disabledFg = Colors.white.withValues(alpha: 0.36);
 
     return SafeArea(
       top: false,
-      child: Container(
-        height: 56,
-        decoration: BoxDecoration(
-          color: colors.card,
-          border: Border(
-            top: BorderSide(
-              color: colors.separator,
-              width: 0.8,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 4, 12, 8),
+        child: Container(
+          height: 54,
+          decoration: BoxDecoration(
+            color: dockBg,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: AppTheme.gold.withValues(alpha: 0.35),
+              width: 1,
             ),
-          ),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Previous button
-            InkWell(
-              borderRadius: BorderRadius.circular(8),
-              onTap: isFirst
-                  ? null
-                  : () {
-                      _pageController.previousPage(
-                        duration: const Duration(milliseconds: 280),
-                        curve: Curves.easeInOut,
-                      );
-                    },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                child: Row(
-                  children: [
-                    Icon(
-                      Icons.arrow_back_ios_rounded,
-                      size: 14,
-                      color: isFirst ? colors.textTertiary : colors.accent,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      'Prev',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isFirst ? colors.textTertiary : colors.accent,
-                      ),
-                    ),
-                  ],
-                ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.16),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
-            ),
-            // Center Index button (tappable to open table of recitations)
-            Material(
-              color: colors.accentSoft,
-              borderRadius: BorderRadius.circular(16),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: _showPlaylistIndexSheet,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.format_list_bulleted_rounded,
-                        size: 15,
-                        color: colors.accent,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${_currentIndex + 1} / ${_playlist.length}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: colors.accent,
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          child: Row(
+            children: [
+              if (hasMultiple) ...[
+                InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: isFirst
+                      ? null
+                      : () {
+                          _pageController.previousPage(
+                            duration: const Duration(milliseconds: 280),
+                            curve: Curves.easeInOut,
+                          );
+                        },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.arrow_back_ios_rounded,
+                          size: 14,
+                          color: isFirst ? disabledFg : activeFg,
                         ),
-                      ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.keyboard_arrow_up_rounded,
-                        size: 16,
-                        color: colors.accent,
-                      ),
-                    ],
+                        const SizedBox(width: 3),
+                        Text(
+                          'Prev',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: isFirst ? disabledFg : activeFg,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ),
-            // Next button
-            InkWell(
-              borderRadius: BorderRadius.circular(8),
-              onTap: isLast
-                  ? null
-                  : () {
-                      _pageController.nextPage(
-                        duration: const Duration(milliseconds: 280),
-                        curve: Curves.easeInOut,
-                      );
-                    },
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                child: Row(
-                  children: [
-                    Text(
-                      'Next',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: isLast ? colors.textTertiary : colors.accent,
+                const Spacer(),
+                Material(
+                  color: Colors.white.withValues(alpha: 0.13),
+                  borderRadius: BorderRadius.circular(12),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: _showPlaylistIndexSheet,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.format_list_bulleted_rounded,
+                            size: 14,
+                            color: Color(0xFFF3D57C),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            '${_currentIndex + 1} / ${_playlist.length}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 14,
-                      color: isLast ? colors.textTertiary : colors.accent,
-                    ),
-                  ],
+                  ),
                 ),
+                const SizedBox(width: 6),
+              ] else ...[
+                const SizedBox(width: 6),
+                IconButton(
+                  tooltip: 'Text Size',
+                  constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.format_size_rounded, size: 19, color: Colors.white),
+                  onPressed: _showFontSettingsSheet,
+                ),
+                const Spacer(),
+              ],
+              AnimatedBuilder(
+                animation: _autoScroll,
+                builder: (_, __) {
+                  final active = _autoScroll.isVisible;
+                  return Material(
+                    color: active
+                        ? const Color(0xFFE7C462)
+                        : Colors.white.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      key: const Key('lyric_auto_scroll_toggle'),
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: _autoScroll.togglePanel,
+                      child: Tooltip(
+                        message: 'Auto-Scroll Teleprompter',
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                active
+                                    ? Icons.pause_circle_filled_rounded
+                                    : Icons.slow_motion_video_rounded,
+                                size: 15,
+                                color: active ? const Color(0xFF142A19) : const Color(0xFFF3D57C),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                active ? 'Scrolling' : 'Auto',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                  color: active ? const Color(0xFF142A19) : Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
               ),
-            ),
-          ],
+              if (hasMultiple) ...[
+                const Spacer(),
+                InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: isLast
+                      ? null
+                      : () {
+                          _pageController.nextPage(
+                            duration: const Duration(milliseconds: 280),
+                            curve: Curves.easeInOut,
+                          );
+                        },
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Next',
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            color: isLast ? disabledFg : activeFg,
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                        Icon(
+                          Icons.arrow_forward_ios_rounded,
+                          size: 14,
+                          color: isLast ? disabledFg : activeFg,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ] else ...[
+                const Spacer(),
+                IconButton(
+                  key: const Key('lyric_dock_note_btn'),
+                  tooltip: 'Personal Reciter Note',
+                  constraints: const BoxConstraints.tightFor(width: 40, height: 40),
+                  padding: EdgeInsets.zero,
+                  icon: const Icon(Icons.sticky_note_2_outlined, size: 19, color: Color(0xFFF3D57C)),
+                  onPressed: _showReciterNoteSheet,
+                ),
+                const SizedBox(width: 6),
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -925,14 +959,20 @@ class _ContentBlock {
 /// Internal page view rendering the content of a single recitation.
 class _LyricPageView extends StatefulWidget {
   final LyricItem item;
+  final int indexInPlaylist;
+  final int totalInPlaylist;
   final AutoScrollController autoScroll;
   final bool isActive;
+  final VoidCallback onTapReciterNote;
   final ValueChanged<String?> onContentLoaded;
 
   const _LyricPageView({
     required this.item,
+    required this.indexInPlaylist,
+    required this.totalInPlaylist,
     required this.autoScroll,
     required this.isActive,
+    required this.onTapReciterNote,
     required this.onContentLoaded,
   });
 
@@ -948,6 +988,32 @@ class _LyricPageViewState extends State<_LyricPageView> {
   late bool _isRtl;
   final ScrollController _scrollController = ScrollController();
   bool _showBackToTop = false;
+
+  static String _categoryBadgeLabel(String rawKey) {
+    final key = rawKey.split('/').first;
+    switch (key) {
+      case 'duas':
+        return 'Duas · دعاء';
+      case 'ziyaraat':
+        return 'Ziyaraat · زیارت';
+      case 'munaejaat':
+        return 'Munajaat · مناجات';
+      case 'nouhay':
+        return 'Nouhay · نوحہ';
+      case 'marsias':
+        return 'Marsias · مرثیہ';
+      case 'manqabat':
+        return 'Manqabat · منقبت';
+      case 'qasiday':
+        return 'Qasiday · قصیدہ';
+      case 'salaam':
+        return 'Salaam · سلام';
+      case 'urdu_poem':
+        return 'Urdu · اردو';
+      default:
+        return key.isEmpty ? 'Recitation' : '${key[0].toUpperCase()}${key.substring(1)}';
+    }
+  }
 
   @override
   void initState() {
@@ -1093,21 +1159,13 @@ class _LyricPageViewState extends State<_LyricPageView> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppTheme.green),
-      );
-    }
-    if (_html == null) {
-      return const Center(child: Text('Content not available'));
-    }
-
     return Stack(
       children: [
         AnimatedBuilder(
           animation: Listenable.merge([
             AppSettings.instance,
             DuaLanguageService.instance,
+            UserDataService.instance,
           ]),
           builder: (context, _) {
             final s = AppSettings.instance;
@@ -1120,23 +1178,43 @@ class _LyricPageViewState extends State<_LyricPageView> {
 
             return SingleChildScrollView(
               controller: _scrollController,
-              padding: const EdgeInsets.only(bottom: 64),
+              padding: const EdgeInsets.only(bottom: 72),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (_multilangDua != null)
+                  _buildSanctuaryHeroCard(colors, isNight),
+                  _buildReciterNoteRibbon(colors, isNight),
+                  if (_loading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 64),
+                      child: Center(
+                        child: CircularProgressIndicator(color: AppTheme.green),
+                      ),
+                    )
+                  else if (_html == null)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 64),
+                      child: Center(
+                        child: Text(
+                          'Content not available',
+                          style: TextStyle(color: colors.textSecondary),
+                        ),
+                      ),
+                    )
+                  else if (_multilangDua != null)
                     ..._buildMultilangDuaView(
                       _multilangDua!,
                       s,
                       readerTextColor,
                       cardBg,
                       colors,
+                      isNight,
                     )
                   else if (_isRtl)
                     ..._buildParsedBlocks(s, readerTextColor, colors)
                   else
                     Padding(
-                      padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + s.paraSpacing),
+                      padding: EdgeInsets.fromLTRB(16, 4, 16, 16 + s.paraSpacing),
                       child: Directionality(
                         textDirection: TextDirection.ltr,
                         child: Html(
@@ -1267,6 +1345,310 @@ class _LyricPageViewState extends State<_LyricPageView> {
     );
   }
 
+  Widget _buildSanctuaryHeroCard(AppColors colors, bool isNight) {
+    final isTitleArabic = AppTheme.containsArabic(widget.item.title);
+    final categoryLabel = _categoryBadgeLabel(widget.item.categoryKey);
+    final hasMultiple = widget.totalInPlaylist > 1;
+    final sub = _multilangDua != null && _multilangDua!.subtitle.isNotEmpty
+        ? _multilangDua!.subtitle
+        : widget.item.subtitle;
+    final lang = DuaLanguageService.instance;
+
+    final heroGradient = isNight
+        ? const [Color(0xFF0E2915), Color(0xFF174523)]
+        : const [Color(0xFF0D3B18), Color(0xFF1A5C28)];
+
+    Widget heroLangChip(String label, bool active, VoidCallback onTap, Key key) {
+      return Expanded(
+        child: Material(
+          color: active
+              ? const Color(0xFFE7C462)
+              : Colors.white.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            key: key,
+            borderRadius: BorderRadius.circular(10),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 7),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    active ? Icons.check_circle_rounded : Icons.circle_outlined,
+                    size: 13,
+                    color: active ? const Color(0xFF122616) : Colors.white.withValues(alpha: 0.8),
+                  ),
+                  const SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w700,
+                        color: active ? const Color(0xFF122616) : Colors.white,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: heroGradient,
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: AppTheme.gold.withValues(alpha: 0.35),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF0D3B18).withValues(alpha: isNight ? 0.32 : 0.16),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppTheme.gold.withValues(alpha: 0.22),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: AppTheme.gold.withValues(alpha: 0.45),
+                      width: 0.8,
+                    ),
+                  ),
+                  child: Text(
+                    categoryLabel,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFFF6DF96),
+                    ),
+                  ),
+                ),
+                if (hasMultiple)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.13),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      '${widget.indexInPlaylist + 1} of ${widget.totalInPlaylist}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              widget.item.title,
+              textAlign: TextAlign.center,
+              textDirection: isTitleArabic ? TextDirection.rtl : TextDirection.ltr,
+              style: isTitleArabic
+                  ? AppTheme.arabicTextStyle(
+                      fontSize: 25,
+                      fontWeight: FontWeight.w700,
+                      height: 1.45,
+                      color: Colors.white,
+                    )
+                  : const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w800,
+                      height: 1.25,
+                      color: Colors.white,
+                    ),
+            ),
+            if (sub.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                sub,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                  color: const Color(0xFFE7EFEA).withValues(alpha: 0.88),
+                ),
+              ),
+            ],
+            if (_multilangDua != null) ...[
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  heroLangChip(
+                    'Arabic',
+                    lang.showArabic,
+                    lang.toggleArabic,
+                    const Key('dua_lang_arabic'),
+                  ),
+                  const SizedBox(width: 8),
+                  heroLangChip(
+                    'Roman',
+                    lang.showRoman,
+                    lang.toggleRoman,
+                    const Key('dua_lang_roman'),
+                  ),
+                  const SizedBox(width: 8),
+                  heroLangChip(
+                    'English',
+                    lang.showEnglish,
+                    lang.toggleEnglish,
+                    const Key('dua_lang_english'),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReciterNoteRibbon(AppColors colors, bool isNight) {
+    final note = UserDataService.instance.getNote(widget.item.id);
+    final hasNote = note != null && note.trim().isNotEmpty;
+    final ribbonBg = isNight
+        ? const Color(0xFF231F16)
+        : const Color(0xFFFAF4E4);
+    final ribbonBorder = isNight
+        ? AppTheme.gold.withValues(alpha: 0.42)
+        : const Color(0xFF9A7B2C).withValues(alpha: 0.38);
+    final labelColor = isNight ? const Color(0xFFF3D57C) : const Color(0xFF6B500D);
+    final bodyColor = isNight ? const Color(0xFFEDE8D8) : const Color(0xFF2A261B);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 2, 16, 10),
+      child: Material(
+        color: ribbonBg,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          key: widget.isActive ? const Key('lyric_note_btn') : null,
+          borderRadius: BorderRadius.circular(14),
+          onTap: widget.onTapReciterNote,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: ribbonBorder, width: 1),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: AppTheme.gold.withValues(alpha: isNight ? 0.22 : 0.16),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: Icon(
+                    hasNote ? Icons.sticky_note_2_rounded : Icons.sticky_note_2_outlined,
+                    size: 16,
+                    color: labelColor,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: hasNote
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Reciter Note',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                                color: labelColor,
+                              ),
+                            ),
+                            Text(
+                              note.trim(),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                color: bodyColor,
+                                height: 1.3,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Personal Reciter Note',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 12.5,
+                                fontWeight: FontWeight.w700,
+                                color: labelColor,
+                              ),
+                            ),
+                            Text(
+                              'Tap to add pitch & majlis cues',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: bodyColor.withValues(alpha: 0.72),
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: isNight
+                        ? AppTheme.gold.withValues(alpha: 0.22)
+                        : Colors.white.withValues(alpha: 0.85),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: ribbonBorder, width: 0.8),
+                  ),
+                  child: Text(
+                    hasNote ? 'Edit' : 'Add',
+                    style: TextStyle(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w700,
+                      color: labelColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   List<Widget> _buildParsedBlocks(AppSettings s, Color textColor, AppColors colors) {
     if (_blocks.isEmpty) {
       if (_html == null) return [];
@@ -1392,126 +1774,80 @@ class _LyricPageViewState extends State<_LyricPageView> {
     Color textColor,
     Color cardBg,
     AppColors colors,
+    bool isNight,
   ) {
     final lang = DuaLanguageService.instance;
-    final goldBorder = colors.gold.withValues(alpha: 0.45);
+    final goldBorder = colors.gold.withValues(alpha: isNight ? 0.38 : 0.32);
     final arabicSize = s.arabicFontSize.clamp(24.0, 52.0);
     final latinSize = s.ltrFontSize.clamp(13.0, 24.0);
-
-    Widget langChip(String label, bool active, VoidCallback onTap, Key key) {
-      return Expanded(
-        child: Material(
-          color: active ? colors.accent : colors.inputFill,
-          borderRadius: BorderRadius.circular(10),
-          child: InkWell(
-            key: key,
-            borderRadius: BorderRadius.circular(10),
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    active ? Icons.check_circle_rounded : Icons.circle_outlined,
-                    size: 13,
-                    color: active ? Colors.white : colors.textSecondary,
-                  ),
-                  const SizedBox(width: 4),
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: active ? Colors.white : colors.textSecondary,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      );
-    }
+    final romanInk = isNight ? const Color(0xFFE7C76E) : const Color(0xFF705310);
+    final romanBg = isNight
+        ? AppTheme.gold.withValues(alpha: 0.10)
+        : const Color(0xFFFAF5E8);
+    final verseBadgeBg = isNight ? const Color(0xFF213627) : const Color(0xFFE7EFEA);
+    final verseBadgeInk = isNight ? const Color(0xFFB5DBC0) : const Color(0xFF1A5C28);
 
     return [
-      Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: cardBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: goldBorder, width: 1.1),
-          ),
-          child: Column(
-            children: [
-              Text(
-                dua.title,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
-                  color: colors.accent,
-                ),
-              ),
-              if (dua.subtitle.isNotEmpty) ...[
-                const SizedBox(height: 3),
-                Text(
-                  dua.subtitle,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: colors.gold,
-                  ),
-                ),
-              ],
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  langChip(
-                    'Arabic',
-                    lang.showArabic,
-                    lang.toggleArabic,
-                    const Key('dua_lang_arabic'),
-                  ),
-                  const SizedBox(width: 8),
-                  langChip(
-                    'Roman',
-                    lang.showRoman,
-                    lang.toggleRoman,
-                    const Key('dua_lang_roman'),
-                  ),
-                  const SizedBox(width: 8),
-                  langChip(
-                    'English',
-                    lang.showEnglish,
-                    lang.toggleEnglish,
-                    const Key('dua_lang_english'),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
       for (int i = 0; i < dua.verses.length; i++)
         Container(
           margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
           decoration: BoxDecoration(
             color: cardBg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: goldBorder, width: 0.9),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: goldBorder, width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isNight ? 0.18 : 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: verseBadgeBg,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${i + 1}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: verseBadgeInk,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Copy verse',
+                    visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints.tightFor(width: 30, height: 30),
+                    padding: EdgeInsets.zero,
+                    icon: Icon(
+                      Icons.copy_rounded,
+                      size: 15,
+                      color: colors.textTertiary,
+                    ),
+                    onPressed: () {
+                      final parts = <String>[
+                        if (dua.verses[i].arabic.isNotEmpty) dua.verses[i].arabic,
+                        if (dua.verses[i].roman.isNotEmpty) dua.verses[i].roman,
+                        if (dua.verses[i].english.isNotEmpty) dua.verses[i].english,
+                      ];
+                      Clipboard.setData(ClipboardData(text: parts.join('\n')));
+                      HapticFeedback.selectionClick();
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
               if (lang.showArabic && dua.verses[i].arabic.isNotEmpty)
                 Directionality(
                   textDirection: TextDirection.rtl,
@@ -1527,27 +1863,34 @@ class _LyricPageViewState extends State<_LyricPageView> {
                 ),
               if (lang.showRoman && dua.verses[i].roman.isNotEmpty) ...[
                 if (lang.showArabic) const SizedBox(height: 12),
-                Text(
-                  dua.verses[i].roman,
-                  textAlign: TextAlign.left,
-                  style: TextStyle(
-                    fontSize: latinSize,
-                    fontStyle: FontStyle.italic,
-                    height: 1.55,
-                    color: colors.gold,
-                    fontWeight: FontWeight.w500,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                  decoration: BoxDecoration(
+                    color: romanBg,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    dua.verses[i].roman,
+                    textAlign: TextAlign.left,
+                    style: TextStyle(
+                      fontSize: latinSize,
+                      fontStyle: FontStyle.italic,
+                      height: 1.5,
+                      color: romanInk,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ],
               if (lang.showEnglish && dua.verses[i].english.isNotEmpty) ...[
-                if (lang.showArabic || lang.showRoman) const SizedBox(height: 8),
+                if (lang.showArabic || lang.showRoman) const SizedBox(height: 10),
                 Text(
                   dua.verses[i].english,
                   textAlign: TextAlign.left,
                   style: TextStyle(
                     fontSize: latinSize,
                     height: 1.55,
-                    color: textColor.withValues(alpha: 0.88),
+                    color: textColor.withValues(alpha: 0.9),
                   ),
                 ),
               ],
